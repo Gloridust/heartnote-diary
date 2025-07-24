@@ -1,7 +1,8 @@
 // API接口封装
 import { DiaryEntry } from './data';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:5000';
+// 使用本地Next.js API代理，避免跨域问题
+const API_BASE_URL = '/api';
 
 // 日记数据接口
 export interface DiaryApiRequest {
@@ -42,7 +43,7 @@ export async function saveDiary(diaryData: DiaryApiRequest): Promise<DiaryApiRes
   try {
     console.log('📝 保存日记到数据库:', diaryData);
     
-    const response = await fetch(`${API_BASE_URL}/api/diary`, {
+    const response = await fetch(`${API_BASE_URL}/diary-proxy`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -69,7 +70,7 @@ export async function getUserDiaries(userId: number): Promise<DiaryListResponse>
   try {
     console.log('📖 获取用户日记:', userId);
     
-    const response = await fetch(`${API_BASE_URL}/api/diary/${userId}`, {
+    const response = await fetch(`${API_BASE_URL}/diary-proxy?userId=${userId}`, {
       method: 'GET',
     });
 

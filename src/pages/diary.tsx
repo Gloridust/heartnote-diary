@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { DiaryEntry } from '../lib/data';
 import { getUserDiaries, UserStorage, convertApiDataToDiaryEntry, extractDateFromApiString } from '../lib/api';
 import SettingsModal from '../components/SettingsModal';
+import DiaryDetailModal from '../components/DiaryDetailModal';
 
 export default function Diary() {
   const [currentMonth, setCurrentMonth] = useState(new Date()); // 使用当前月份
@@ -15,6 +16,10 @@ export default function Diary() {
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // 日记详情弹窗状态
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedDiary, setSelectedDiary] = useState<DiaryEntry | null>(null);
 
   // 初始化用户ID和加载数据
   useEffect(() => {
@@ -76,6 +81,33 @@ export default function Diary() {
     if (currentUserId) {
       loadUserDiaries(currentUserId);
     }
+  };
+
+  // 处理日记点击
+  const handleDiaryClick = (diary: DiaryEntry) => {
+    console.log('📖 点击查看日记:', diary);
+    setSelectedDiary(diary);
+    setShowDetailModal(true);
+  };
+
+  // 关闭详情弹窗
+  const handleCloseDetailModal = () => {
+    setShowDetailModal(false);
+    setSelectedDiary(null);
+  };
+
+  // 处理日记更新
+  const handleDiaryUpdated = () => {
+    console.log('📝 日记已更新，刷新数据');
+    refreshData();
+  };
+
+  // 处理日记删除
+  const handleDiaryDeleted = () => {
+    console.log('🗑️ 日记已删除，刷新数据');
+    refreshData();
+    // 清除选中的日期，因为可能没有日记了
+    setSelectedDate(null);
   };
 
   const getDaysInMonth = (date: Date) => {
@@ -264,7 +296,11 @@ export default function Diary() {
             
             {getSelectedDateEntries().length > 0 ? (
               getSelectedDateEntries().map((entry: DiaryEntry) => (
-                <div key={entry.id} className="diary-preview cursor-pointer">
+                <div 
+                  key={entry.id} 
+                  className="diary-preview cursor-pointer hover:shadow-md transition-all duration-200"
+                  onClick={() => handleDiaryClick(entry)}
+                >
                   <div className="diary-preview-header">
                     <h4 className="diary-preview-title">{entry.title}</h4>
                     <div className="flex items-center space-x-2">
@@ -295,6 +331,12 @@ export default function Diary() {
                   <p className="diary-preview-content">
                     {entry.content}
                   </p>
+                  {/* 点击提示 */}
+                  <div className="mt-2 text-center">
+                    <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                      点击查看详情
+                    </span>
+                  </div>
                 </div>
               ))
             ) : (
@@ -350,6 +392,18 @@ export default function Diary() {
           loadUserDiaries(newUserId); // 重新加载新用户的数据
         }}
       />
+
+      {/* 日记详情弹窗 */}
+      {currentUserId && (
+        <DiaryDetailModal
+          isOpen={showDetailModal}
+          onClose={handleCloseDetailModal}
+          diary={selectedDiary}
+          userId={currentUserId}
+          onDiaryUpdated={handleDiaryUpdated}
+          onDiaryDeleted={handleDiaryDeleted}
+        />
+      )}
     </div>
   );
 } 
