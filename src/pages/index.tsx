@@ -1,9 +1,11 @@
-import { useState} from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Head from 'next/head';
 import { Message, DiaryEntry } from '../lib/data';
+import { saveDiary, formatDateForApi, UserStorage, type DiaryApiRequest } from '../lib/api';
 import VoiceInput from '../components/VoiceInput';
 import LoadingAnimation from '../components/LoadingAnimation';
+import SettingsModal from '../components/SettingsModal';
 
 export default function Home() {
   // 对话状态管理 - 主页面维护完整对话记录
@@ -18,6 +20,20 @@ export default function Home() {
   const [isSpeechLoading, setIsSpeechLoading] = useState(false);
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [tempUserText, setTempUserText] = useState<string>(''); // 临时显示用户文字
+  
+  // 设置弹窗状态
+  const [showSettings, setShowSettings] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  
+  // 保存状态
+  const [isSaving, setIsSaving] = useState(false);
+
+  // 初始化用户ID
+  useEffect(() => {
+    const userId = UserStorage.getOrCreateUserId();
+    setCurrentUserId(userId);
+    console.log('👤 当前用户ID:', userId);
+  }, []);
 
   // 组件渲染时的调试信息
   console.log('🏠 Home组件渲染，当前消息数量:', messages.length);
@@ -175,17 +191,60 @@ export default function Home() {
     }
   };
 
-  // 保存日记
-  const saveDiary = () => {
-    console.log('💾 保存日记:', diaryEntry);
-    // TODO: 调用保存API
-    alert('日记已保存！');
-    // 重置状态，准备下一次对话
-    setMessages([]);
-    setDiaryEntry(null);
-    setShowDiaryPreview(false);
-    setShowDiary(false);
-    setHasStartedConversation(false);
+  // 保存日记到数据库
+  const saveDiaryToDatabase = async () => {
+    if (!diaryEntry || !currentUserId) {
+      alert('用户ID或日记数据缺失！');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      console.log('💾 开始保存日记到数据库:', diaryEntry);
+      
+      // 准备API请求数据
+      const apiData: DiaryApiRequest = {
+        id: currentUserId,
+        title: diaryEntry.title,
+        content: diaryEntry.content,
+        date: formatDateForApi(new Date()), // 使用当前时间
+        score: diaryEntry.score,
+        tag: diaryEntry.tag
+      };
+      
+      // 调用保存API
+      const result = await saveDiary(apiData);
+      
+      if (result.status === 'success') {
+        console.log('✅ 日记保存成功:', result);
+        alert(`✅ ${result.message || '日记保存成功！'}\n日记ID: ${result.diary_id}`);
+        
+        // 重置状态，准备下一次对话
+        setMessages([]);
+        setDiaryEntry(null);
+        setShowDiaryPreview(false);
+        setShowDiary(false);
+        setHasStartedConversation(false);
+      } else {
+        throw new Error(result.message || '保存失败');
+      }
+      
+    } catch (error) {
+      console.error('❌ 保存日记失败:', error);
+      let errorMessage = '保存日记失败';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('fetch')) {
+          errorMessage = '❌ 无法连接到服务器\n\n请确保：\n1. 服务器正在运行 (http://localhost:5000)\n2. 网络连接正常\n3. 服务器API正常工作';
+        } else {
+          errorMessage = `❌ ${error.message}`;
+        }
+      }
+      
+      alert(errorMessage);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // 获取标签对应的标题
@@ -233,8 +292,15 @@ export default function Home() {
           <Link href="/test-audio" className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--surface-accent)' }}>
             <span style={{ color: 'var(--text-secondary)' }}>🔧</span>
           </Link>
+          <button 
+            onClick={() => setShowSettings(true)}
+            className="w-10 h-10 rounded-full flex items-center justify-center" 
+            style={{ backgroundColor: 'var(--surface-accent)' }}
+          >
+            <span style={{ color: 'var(--text-secondary)' }}>⚙️</span>
+          </button>
           <Link href="/diary" className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--surface-accent)' }}>
-            <span style={{ color: 'var(--text-secondary)' }}>👤</span>
+            <span style={{ color: 'var(--text-secondary)' }}>📖</span>
           </Link>
         </div>
       </header>
@@ -394,8 +460,9 @@ export default function Home() {
                   {/* 操作按钮 - 只保留保存 */}
                   <div className="flex justify-center">
                     <button
-                      onClick={saveDiary}
+                      onClick={saveDiaryToDatabase}
                       className="button-primary px-6 py-2"
+                      disabled={isSaving}
                       style={{
                         backgroundColor: 'var(--primary-base)',
                         color: 'var(--text-inverse)',
@@ -406,7 +473,7 @@ export default function Home() {
                         cursor: 'pointer'
                       }}
                     >
-                      💾 保存日记
+                      {isSaving ? '💾 保存中...' : '💾 保存日记'}
                     </button>
                   </div>
 
@@ -434,6 +501,16 @@ export default function Home() {
           </Link>
         </div>
       </nav>
+
+      {/* 设置弹窗 */}
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        onUserIdChange={(newUserId) => {
+          setCurrentUserId(newUserId);
+          console.log('👤 用户ID已更新:', newUserId);
+        }}
+      />
       </div>
     </>
   );
