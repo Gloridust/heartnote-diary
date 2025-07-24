@@ -40,10 +40,23 @@
 /* 深色模式适配 */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background-page: #1a1a1a;
-    --surface-main: #2a2a2a;
+    /* 背景色适配 */
+    --background-page: #121212;
+    --surface-main: #1e1e1e;
+    --surface-light: rgba(30, 30, 30, 0.95);
+    --surface-dark: #2a2a2a;
+    --surface-accent: #2d2d3a;
+    
+    /* 文字颜色适配 */
     --text-primary: #ffffff;
-    --text-secondary: #cccccc;
+    --text-secondary: #b3b3b3;
+    --text-tertiary: #808080;
+    --text-inverse: #000000;
+    
+    /* 主色调保持不变，但略微调整以适应深色背景 */
+    --primary-base: #C4A3E8;
+    --primary-light: #D4C7E8;
+    --primary-dark: #9B7FC7;
   }
 }
 
@@ -107,6 +120,21 @@ html {
   background: #a8a8a8;
 }
 
+/* 深色模式下的滚动条适配 */
+@media (prefers-color-scheme: dark) {
+  ::-webkit-scrollbar-track {
+    background: #2a2a2a;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #555555;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #777777;
+  }
+}
+
 /* 导航栏样式 - 严格按照设计稿 */
 .nav-bottom {
   background-color: var(--surface-light);
@@ -118,6 +146,14 @@ html {
   border-radius: 9999px;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
   backdrop-filter: blur(10px);
+}
+
+/* 深色模式下的导航栏适配 */
+@media (prefers-color-scheme: dark) {
+  .nav-bottom {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
 }
 
 .nav-item {
@@ -170,6 +206,19 @@ html {
   padding: 12px 16px;
   color: var(--text-inverse);
   border-radius: 16px 16px 4px 16px;
+}
+
+/* 深色模式下的聊天气泡适配 */
+@media (prefers-color-scheme: dark) {
+  .chat-bubble-ai {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .chat-bubble-user {
+    /* 用户气泡在深色模式下使用更亮的主色调确保文字可读 */
+    background-color: var(--primary-base);
+    color: var(--text-inverse);
+  }
 }
 
 .chat-bubble-ai p,
@@ -280,6 +329,18 @@ html {
 .diary-preview:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* 深色模式下的日记预览适配 */
+@media (prefers-color-scheme: dark) {
+  .diary-preview {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .diary-preview:hover {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
 }
 
 .diary-preview-header {
@@ -401,6 +462,17 @@ html {
 
 .button-secondary:hover {
   background-color: var(--surface-dark);
+}
+
+/* 深色模式下的按钮适配 */
+@media (prefers-color-scheme: dark) {
+  .button-secondary {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .button-secondary:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+  }
 }
 
 /* 按钮点击效果 */

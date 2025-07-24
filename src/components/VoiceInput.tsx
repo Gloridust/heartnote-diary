@@ -714,8 +714,9 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
               点击开始语音对话
             </p>
             {/* Safari和PWA用户特别提醒 */}
-            {(/Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)) || 
-             (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ? (
+            {(typeof window !== 'undefined' && 
+              ((/Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)) || 
+               (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches))) ? (
               <div className="mt-2 p-2 rounded-lg border" style={{
                 backgroundColor: 'var(--surface-accent)',
                 borderColor: 'var(--primary-light)',
