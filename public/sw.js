@@ -1,10 +1,12 @@
 // 信语日记 PWA Service Worker
-const CACHE_NAME = 'heartnote-diary-v1';
+const CACHE_NAME = 'heartnote-diary-v2';
 const urlsToCache = [
   '/',
   '/diary',
   '/test-audio',
-  '/manifest.json'
+  '/manifest.json',
+  '/favicon.png',
+  '/favicon.ico'
 ];
 
 // 安装事件

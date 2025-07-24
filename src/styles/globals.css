@@ -57,6 +57,37 @@ body {
   padding: 0;
 }
 
+/* iOS WebApp 安全区域适配 */
+html {
+  /* 设置安全区域背景色为页面背景色 */
+  background: var(--background-page);
+}
+
+/* PWA 全屏模式适配 */
+@supports (display: standalone) {
+  body {
+    /* PWA模式下确保背景色覆盖整个区域 */
+    background: var(--background-page);
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* iOS Safari WebApp 模式适配 */
+@supports ((-webkit-touch-callout: none)) {
+  html {
+    /* iOS WebApp 模式下的安全区域处理 */
+    background: var(--background-page);
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  body {
+    /* iOS WebApp 模式确保背景色 */
+    background: var(--background-page);
+    padding-top: 0;
+  }
+}
+
 /* 自定义滚动条 */
 ::-webkit-scrollbar {
   width: 6px;
@@ -455,10 +486,33 @@ input[type="text"]:focus {
   padding: var(--spacing-comfortable);
 }
 
+/* iOS WebApp 模式下的头部适配 */
+@supports ((-webkit-touch-callout: none)) and (display: standalone) {
+  /* 固定头部在iOS WebApp模式下的适配 */
+  .fixed.top-0 {
+    padding-top: env(safe-area-inset-top);
+    background: var(--background-page);
+  }
+}
+
+/* PWA 模式适配 */
+@media (display-mode: standalone) {
+  /* 确保头部在PWA模式下正确显示 */
+  header {
+    background: var(--background-page) !important;
+  }
+  
+  .fixed.top-0 {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
 /* 响应式优化 */
 @media (max-width: 640px) {
   .nav-bottom {
     margin: 0 1rem 0.5rem 1rem;
+    /* iOS WebApp 底部安全区域适配 */
+    padding-bottom: env(safe-area-inset-bottom);
   }
   
   .input-container {
@@ -468,5 +522,10 @@ input[type="text"]:focus {
   .button-group {
     flex-wrap: wrap;
     gap: 0.5rem;
+  }
+  
+  /* iOS WebApp 语音输入组件底部适配 */
+  .voice-input-container {
+    bottom: calc(110px + env(safe-area-inset-bottom));
   }
 }
