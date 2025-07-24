@@ -154,7 +154,7 @@ export default function TestAudio() {
         </div>
       </header>
 
-      <div className="spacing-standard max-w-2xl mx-auto pt-20">
+      <div className="spacing-standard max-w-2xl mx-auto content-with-header">
         {/* 测试结果 */}
         <div className="space-y-4">
           <div style={{ backgroundColor: 'var(--surface-main)' }} 

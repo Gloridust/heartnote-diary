@@ -94,7 +94,7 @@ export default function Diary() {
         </div>
       </header>
 
-      <div className="spacing-standard max-w-2xl mx-auto mb-24 pt-20">
+      <div className="spacing-standard max-w-2xl mx-auto mb-24 content-with-header">
         {/* 日历容器 */}
         <div className="calendar-container">
           {/* 日历头部 */}

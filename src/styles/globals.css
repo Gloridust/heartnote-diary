@@ -558,12 +558,28 @@ input[type="text"]:focus {
   padding: var(--spacing-comfortable);
 }
 
+/* 固定头部高度定义 */
+:root {
+  --header-height: 80px; /* 增加头部基础高度 */
+}
+
+/* 通用内容区域适配 - 确保所有模式下都有足够间距 */
+.content-with-header {
+  padding-top: calc(var(--header-height) + 1rem) !important;
+}
+
 /* iOS WebApp 模式下的头部适配 */
 @supports ((-webkit-touch-callout: none)) and (display: standalone) {
   /* 固定头部在iOS WebApp模式下的适配 */
   .fixed.top-0 {
     padding-top: env(safe-area-inset-top);
     background: var(--background-page);
+    min-height: calc(var(--header-height) + env(safe-area-inset-top));
+  }
+  
+  /* 内容区域在iOS WebApp模式下的适配 */
+  .content-with-header {
+    padding-top: calc(var(--header-height) + env(safe-area-inset-top) + 1rem) !important;
   }
 }
 
@@ -572,6 +588,7 @@ input[type="text"]:focus {
   /* 确保头部在PWA模式下正确显示 */
   header {
     background: var(--background-page) !important;
+    min-height: var(--header-height);
   }
   
   .fixed.top-0 {

@@ -1,9 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState} from 'react';
 import Link from 'next/link';
+import Head from 'next/head';
 import { Message, DiaryEntry } from '../lib/data';
 import VoiceInput from '../components/VoiceInput';
 import LoadingAnimation from '../components/LoadingAnimation';
-import { VoiceMessage } from '../hooks/useVoiceChat';
 
 export default function Home() {
   // 对话状态管理 - 主页面维护完整对话记录
@@ -215,7 +215,12 @@ export default function Home() {
   };
 
   return (
-    <div style={{ backgroundColor: 'var(--background-page)' }} className="min-h-screen pb-20">
+    <>
+      <Head>
+        <title>信语日记 - AI驱动的对话式日记应用</title>
+        <meta name="description" content="信语日记 - AI驱动的对话式日记应用，用语音记录生活点滴" />
+      </Head>
+      <div style={{ backgroundColor: 'var(--background-page)' }} className="min-h-screen pb-20">
       {/* 头部导航 - 固定在顶部 */}
       <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between spacing-standard" style={{ backgroundColor: 'var(--background-page)' }}>
         <div className="flex items-center space-x-2">
@@ -250,7 +255,7 @@ export default function Home() {
 
       {showDiary ? (
         /* 日记显示界面 */
-        <div className="spacing-standard max-w-2xl mx-auto pt-20">
+        <div className="spacing-standard max-w-2xl mx-auto content-with-header">
           <div className="diary-preview">
             <div className="diary-preview-header">
               <h2 className="diary-preview-title">{diaryEntry?.title || '今日日记'}</h2>
@@ -302,7 +307,7 @@ export default function Home() {
         </div>
       ) : (
         /* 对话界面 */
-        <div className="spacing-standard max-w-2xl mx-auto mb-32 pt-20">
+        <div className="spacing-standard max-w-2xl mx-auto mb-32 content-with-header">
           {messages.length === 0 ? (
             /* 无对话时的引导界面 */
             <div className="flex flex-col items-center justify-center py-16">
@@ -429,6 +434,7 @@ export default function Home() {
           </Link>
         </div>
       </nav>
-    </div>
+      </div>
+    </>
   );
 }
