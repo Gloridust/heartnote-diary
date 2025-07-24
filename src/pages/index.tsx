@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { Message, DiaryEntry } from '../lib/data';
 import VoiceInput from '../components/VoiceInput';
+import LoadingAnimation from '../components/LoadingAnimation';
 import { VoiceMessage } from '../hooks/useVoiceChat';
 
 export default function Home() {
@@ -12,6 +13,11 @@ export default function Home() {
   const [showVoiceInput, setShowVoiceInput] = useState(true);
   const [hasStartedConversation, setHasStartedConversation] = useState(false);
   const [showDiaryPreview, setShowDiaryPreview] = useState(false); // 新增：显示日记预览卡片
+  
+  // 加载状态管理
+  const [isSpeechLoading, setIsSpeechLoading] = useState(false);
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const [tempUserText, setTempUserText] = useState<string>(''); // 临时显示用户文字
 
   // 组件渲染时的调试信息
   console.log('🏠 Home组件渲染，当前消息数量:', messages.length);
@@ -19,10 +25,11 @@ export default function Home() {
   console.log('🎯 对话是否已开始:', hasStartedConversation);
 
   // 添加新消息到对话记录
-  const addNewMessages = (userText: string, aiText: string) => {
+  const addNewMessages = (userText: string, aiText: string, mode?: string) => {
     console.log('📝 添加新消息到对话记录');
     console.log('👤 用户:', userText);
     console.log('🤖 AI:', aiText);
+    console.log('🎯 模式:', mode);
     
     const userMessage: Message = {
       id: Date.now(),
@@ -34,28 +41,58 @@ export default function Home() {
       })
     };
     
-    const aiMessage: Message = {
-      id: Date.now() + 1,
-      content: aiText,
-      isUser: false,
-      timestamp: new Date().toLocaleTimeString('zh-CN', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      })
-    };
-    
-    setMessages(prev => {
-      const newMessages = [...prev, userMessage, aiMessage];
-      console.log('📋 更新后的完整对话记录:', newMessages);
-      return newMessages;
-    });
+    if (mode === 'end-mode') {
+      // 特殊处理：只添加用户消息，不添加AI消息（AI内容将通过日记卡片显示）
+      console.log('📝 End模式：只添加用户消息，AI消息通过日记卡片显示');
+      setMessages(prev => {
+        const newMessages = [...prev, userMessage];
+        console.log('📋 更新后的对话记录（只含用户消息）:', newMessages);
+        return newMessages;
+      });
+    } else {
+      // 正常模式：添加用户和AI消息
+      const aiMessage: Message = {
+        id: Date.now() + 1,
+        content: aiText,
+        isUser: false,
+        timestamp: new Date().toLocaleTimeString('zh-CN', { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        })
+      };
+      
+      setMessages(prev => {
+        const newMessages = [...prev, userMessage, aiMessage];
+        console.log('📋 更新后的完整对话记录:', newMessages);
+        return newMessages;
+      });
+    }
 
     // 如果当前显示日记预览，隐藏它，让用户继续对话
     if (showDiaryPreview) {
       console.log('🔄 用户继续对话，隐藏日记预览');
-      setShowDiaryPreview(false);
-      setDiaryEntry(null);
+      handleClearDiaryPreview();
     }
+  };
+
+  // 处理加载状态变化
+  const handleLoadingStates = (speechLoading: boolean, chatLoading: boolean, userText?: string) => {
+    console.log('🔄 加载状态更新:', { speechLoading, chatLoading, userText });
+    setIsSpeechLoading(speechLoading);
+    setIsChatLoading(chatLoading);
+    
+    if (userText) {
+      setTempUserText(userText);
+    } else if (!speechLoading && !chatLoading) {
+      setTempUserText('');
+    }
+  };
+
+  // 清除日记预览状态，让用户继续对话
+  const handleClearDiaryPreview = () => {
+    console.log('🗑️ 清除日记预览状态，用户继续对话');
+    setShowDiaryPreview(false);
+    setDiaryEntry(null);
   };
 
   // 初始化对话（添加欢迎消息）
@@ -187,9 +224,14 @@ export default function Home() {
           </div>
           <h1 className="text-title" style={{ color: 'var(--text-primary)' }}>信语日记</h1>
         </div>
-        <Link href="/diary" className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--surface-accent)' }}>
-          <span style={{ color: 'var(--text-secondary)' }}>👤</span>
-        </Link>
+        <div className="flex items-center space-x-2">
+          <Link href="/test-audio" className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--surface-accent)' }}>
+            <span style={{ color: 'var(--text-secondary)' }}>🔧</span>
+          </Link>
+          <Link href="/diary" className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--surface-accent)' }}>
+            <span style={{ color: 'var(--text-secondary)' }}>👤</span>
+          </Link>
+        </div>
       </header>
 
       {/* 语音输入组件 */}
@@ -201,6 +243,8 @@ export default function Home() {
           onGenerateDiary={generateDiary}
           hasMessages={messages.length > 0}
           showDiaryPreview={showDiaryPreview}
+          onShowLoadingStates={handleLoadingStates}
+          onClearDiaryPreview={handleClearDiaryPreview}
         />
       )}
 
@@ -282,6 +326,23 @@ export default function Home() {
                   </div>
                 );
               })}
+
+              {/* 语音转文字加载动画 */}
+              {isSpeechLoading && (
+                <LoadingAnimation message="正在识别语音..." isUser={false} />
+              )}
+
+              {/* 显示临时用户文字 */}
+              {tempUserText && !isSpeechLoading && (
+                <div className="chat-bubble-user">
+                  <p>{tempUserText}</p>
+                </div>
+              )}
+
+              {/* AI回复加载动画 */}
+              {isChatLoading && (
+                <LoadingAnimation message="小语正在思考..." isUser={false} />
+              )}
 
               {/* 日记预览卡片 - 显示在对话下方 */}
               {showDiaryPreview && diaryEntry && (
