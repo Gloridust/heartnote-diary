@@ -81,8 +81,8 @@ export default function Diary() {
 
   return (
     <div style={{ backgroundColor: 'var(--background-page)' }} className="min-h-screen pb-20">
-      {/* 头部导航 */}
-      <header className="flex items-center justify-between spacing-standard" style={{ backgroundColor: 'var(--background-page)' }}>
+      {/* 头部导航 - 固定在顶部 */}
+      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between spacing-standard" style={{ backgroundColor: 'var(--background-page)' }}>
         <h1 className="text-title" style={{ color: 'var(--text-primary)' }}>日记本</h1>
         <div className="flex items-center space-x-2">
           <button className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--surface-accent)' }}>
@@ -94,7 +94,7 @@ export default function Diary() {
         </div>
       </header>
 
-      <div className="spacing-standard max-w-2xl mx-auto mb-24">
+      <div className="spacing-standard max-w-2xl mx-auto mb-24 pt-20">
         {/* 日历容器 */}
         <div className="calendar-container">
           {/* 日历头部 */}

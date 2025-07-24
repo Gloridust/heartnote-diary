@@ -47,11 +47,17 @@ yarn install
 2. 创建 `.env.local` 文件并添加以下配置：
 
 ```bash
-# 字节豆包实时对话API配置
+# 字节跳动语音识别API配置
+BYTEDANCE_APP_KEY=your_app_key_here
+BYTEDANCE_ACCESS_TOKEN=your_access_token_here
+
+# 豆包大模型API配置
+ARK_API_KEY=your_ark_api_key_here
+DOUBAO_MODEL=doubao-1-5-pro-32k-250115
+
+# 旧配置（兼容性保留）
 NEXT_PUBLIC_DOUBAO_APP_ID=your_app_id_here
 NEXT_PUBLIC_DOUBAO_ACCESS_KEY=your_access_key_here
-
-# 服务端API密钥
 DOUBAO_APP_ID=your_app_id_here
 DOUBAO_ACCESS_KEY=your_access_key_here
 ```

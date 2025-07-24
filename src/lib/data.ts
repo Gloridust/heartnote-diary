@@ -13,6 +13,8 @@ export interface DiaryEntry {
   content: string;
   time: string;
   generated?: boolean;
+  score?: number;
+  tag?: string;
 }
 
 export interface ConversationSession {
