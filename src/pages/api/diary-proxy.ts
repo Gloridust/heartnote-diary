@@ -31,13 +31,20 @@ async function handleSaveDiary(req: NextApiRequest, res: NextApiResponse) {
   console.log('📝 代理保存日记请求:', diaryData);
 
   try {
+    // 创建AbortController用于超时控制
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+
     const response = await fetch(`${EXTERNAL_API_BASE_URL}/api/diary`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(diaryData),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -51,11 +58,25 @@ async function handleSaveDiary(req: NextApiRequest, res: NextApiResponse) {
   } catch (error) {
     console.error('❌ 保存日记代理错误:', error);
     
-    if (error instanceof Error && error.message.includes('fetch')) {
-      return res.status(503).json({
-        success: false,
-        error: '无法连接到数据库服务器，请检查服务器状态'
-      });
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        return res.status(408).json({
+          success: false,
+          error: '请求超时，数据库服务器响应缓慢，请稍后重试'
+        });
+      }
+      if (error.message.includes('ETIMEDOUT') || error.message.includes('terminated')) {
+        return res.status(503).json({
+          success: false,
+          error: '网络连接超时，无法连接到数据库服务器'
+        });
+      }
+      if (error.message.includes('fetch')) {
+        return res.status(503).json({
+          success: false,
+          error: '无法连接到数据库服务器，请检查服务器状态'
+        });
+      }
     }
 
     return res.status(500).json({
