@@ -41,15 +41,38 @@ export default function Diary() {
       if (response.status === 'success' && response.data) {
         console.log('✅ 日记数据加载成功:', response.data);
         
-        // 转换API数据为本地格式
-        const convertedEntries = response.data.map(convertApiDataToDiaryEntry);
+        // 转换API数据为本地格式，并按日期排序（最新的在前）
+        const convertedEntries = response.data
+          .map(convertApiDataToDiaryEntry)
+          .sort((a, b) => b.date.localeCompare(a.date));
         setDiaryEntries(convertedEntries);
         
-        // 提取有日记的日期列表
-        const dates = response.data.map(entry => extractDateFromApiString(entry.date));
+        // 提取有日记的日期列表，并排序
+        const dates = response.data
+          .map(entry => extractDateFromApiString(entry.date))
+          .sort((a, b) => b.localeCompare(a)); // 最新的在前
         setDatesWithDiary(dates);
         
         console.log('📅 有日记的日期:', dates);
+        console.log('📊 转换后的日记条目:', convertedEntries);
+        console.log('🗓️ 当前查看的月份:', currentMonth.toISOString().substring(0, 7));
+        
+        // 如果当前月份没有日记，自动跳转到第一个有日记的月份
+        if (dates.length > 0) {
+          const firstDiaryDate = dates[0]; // 例如: "2025-07-24"
+          const currentMonthKey = currentMonth.toISOString().substring(0, 7); // 例如: "2025-01"
+          const firstDiaryMonth = firstDiaryDate.substring(0, 7); // 例如: "2025-07"
+          
+          console.log('🗓️ 第一个日记的月份:', firstDiaryMonth);
+          console.log('🗓️ 当前查看月份:', currentMonthKey);
+          
+          if (currentMonthKey !== firstDiaryMonth) {
+            const [year, month] = firstDiaryDate.split('-');
+            const targetDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+            console.log('🔄 自动跳转到有日记的月份:', targetDate);
+            setCurrentMonth(targetDate);
+          }
+        }
         
       } else if (response.status === 'error') {
         console.log('ℹ️ 用户暂无日记数据:', response.message);
@@ -140,6 +163,11 @@ export default function Diary() {
         selectedDate.getDate() === day &&
         selectedDate.getMonth() === currentMonth.getMonth() &&
         selectedDate.getFullYear() === currentMonth.getFullYear();
+
+      // 调试信息：只在有日记的日期打印
+      if (hasDiary) {
+        console.log(`📅 日期 ${dateKey} 有日记:`, hasDiary, datesWithDiary);
+      }
 
       days.push(
         <button
@@ -264,6 +292,11 @@ export default function Diary() {
               {!isLoading && (
                 <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
                   共 {diaryEntries.length} 篇日记
+                  {datesWithDiary.length > 0 && (
+                    <span className="ml-2">
+                      ({datesWithDiary.length} 天有记录)
+                    </span>
+                  )}
                 </div>
               )}
             </div>
