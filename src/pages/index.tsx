@@ -1,49 +1,34 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Message, DiaryEntry } from '../lib/data';
+import VoiceInput from '../components/VoiceInput';
+import { VoiceMessage } from '../hooks/useVoiceChat';
 
 export default function Home() {
-  // 硬编码完整对话记录
-  const [messages] = useState<Message[]>([
-    {
-      id: 1,
-      content: "嗨，今天过得怎么样？有什么想要分享的吗？我很想听听你今天的故事～",
-      isUser: false,
-      timestamp: "19:30"
-    },
-    {
-      id: 2,
-      content: "今天过得还不错！上午在咖啡厅完成了工作，下午去公园散步，晚上和朋友聚餐，感觉很充实。",
-      isUser: true,
-      timestamp: "19:32"
-    },
-    {
-      id: 3,
-      content: "听起来是个很充实的一天呢！在咖啡厅工作感觉如何？是你常去的那家吗？",
-      isUser: false,
-      timestamp: "19:33"
-    },
-    {
-      id: 4,
-      content: "是的，是我常去的那家咖啡厅。他们的拿铁很香，环境也很安静，很适合工作。今天还遇到了一只很可爱的小猫。",
-      isUser: true,
-      timestamp: "19:35"
-    },
-    {
-      id: 5,
-      content: "听起来是个充满美食和期待的一天！你今天有什么特别的感受或者想法吗？",
-      isUser: false,
-      timestamp: "19:36"
-    },
-    {
-      id: 6,
-      content: "嗯，感觉今天特别珍惜和朋友相处的时光，我们聊了很多未来的计划，让我对生活更有期待了。",
-      isUser: true,
-      timestamp: "19:38"
-    }
-  ]);
+  // 对话状态管理
+  const [messages, setMessages] = useState<Message[]>([]);
   const [diaryEntry, setDiaryEntry] = useState<DiaryEntry | null>(null);
   const [showDiary, setShowDiary] = useState(false);
+  const [showVoiceInput, setShowVoiceInput] = useState(true);
+
+  // 处理语音消息接收
+  const handleVoiceMessagesReceived = (voiceMessages: VoiceMessage[]) => {
+    // 将语音消息转换为Message格式
+    const convertedMessages: Message[] = voiceMessages.map(vm => ({
+      id: vm.id,
+      content: vm.content,
+      isUser: vm.isUser,
+      timestamp: vm.timestamp
+    }));
+    
+    setMessages(convertedMessages);
+    // 不自动隐藏语音输入面板，让用户选择操作
+  };
+
+  // 处理语音会话结束
+  const handleVoiceSessionEnd = () => {
+    // 会话结束后可以选择生成日记
+  };
 
   // 生成日记功能
 
@@ -62,12 +47,13 @@ export default function Home() {
     };
     setDiaryEntry(diary);
     setShowDiary(true);
+    setShowVoiceInput(false); // 生成日记后隐藏语音面板
   };
 
   return (
-    <div style={{ backgroundColor: 'var(--background-page)' }} className="min-h-screen">
+    <div style={{ backgroundColor: 'var(--background-page)' }} className="min-h-screen pb-20">
       {/* 头部导航 */}
-      <header className="flex items-center justify-between spacing-standard" style={{ backgroundColor: 'var(--surface-light)' }}>
+      <header className="flex items-center justify-between spacing-standard" style={{ backgroundColor: 'var(--background-page)' }}>
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--primary-base)' }}>
             <span style={{ color: 'var(--text-inverse)' }} className="text-lg">📔</span>
@@ -78,6 +64,16 @@ export default function Home() {
           <span style={{ color: 'var(--text-secondary)' }}>👤</span>
         </Link>
       </header>
+
+      {/* 语音输入组件 */}
+      {showVoiceInput && (
+        <VoiceInput
+          onMessagesReceived={handleVoiceMessagesReceived}
+          onSessionEnd={handleVoiceSessionEnd}
+          onGenerateDiary={generateDiary}
+          hasMessages={messages.length > 0}
+        />
+      )}
 
       {showDiary ? (
         /* 日记显示界面 */
@@ -113,27 +109,29 @@ export default function Home() {
         </div>
       ) : (
         /* 对话界面 */
-        <div className="spacing-standard max-w-2xl mx-auto">
-          {/* 聊天消息 */}
-          <div className="flex flex-col mb-6">
-            {messages.map((message) => (
-              <div key={message.id} className={message.isUser ? 'chat-bubble-user' : 'chat-bubble-ai'}>
-                <p>{message.content}</p>
+        <div className="spacing-standard max-w-2xl mx-auto mb-32">
+          {messages.length === 0 ? (
+            /* 无对话时的引导界面 */
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="text-center space-y-4">
+                <div className="text-6xl mb-4">🎤</div>
+                <h2 className="text-title" style={{ color: 'var(--text-primary)' }}>开始语音对话</h2>
+                <p className="text-body" style={{ color: 'var(--text-secondary)', maxWidth: '300px' }}>
+                  点击下方的麦克风按钮，与AI助手开始对话，分享您今天的经历和感受
+                </p>
               </div>
-            ))}
-            {/* AI提示生成日记 */}
-            <div className="chat-bubble-ai">
-              <p className="mb-3">
-                听起来是个充满美食和期待的一天！根据我们的对话，我已经为你生成了今天的日记草稿，你可以看看哦～
-              </p>
-              <button 
-                onClick={generateDiary}
-                className="button-primary"
-              >
-                查看日记
-              </button>
             </div>
-          </div>
+          ) : (
+            /* 有对话记录时的界面 */
+            <div className="flex flex-col mb-6">
+              {/* 聊天消息 */}
+              {messages.map((message) => (
+                <div key={message.id} className={message.isUser ? 'chat-bubble-user' : 'chat-bubble-ai'}>
+                  <p>{message.content}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

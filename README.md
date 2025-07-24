@@ -41,6 +41,21 @@ npm install
 yarn install
 ```
 
+### 配置字节豆包API
+
+1. 在 [火山引擎控制台](https://console.volcengine.com/) 注册并获取API密钥
+2. 创建 `.env.local` 文件并添加以下配置：
+
+```bash
+# 字节豆包实时对话API配置
+NEXT_PUBLIC_DOUBAO_APP_ID=your_app_id_here
+NEXT_PUBLIC_DOUBAO_ACCESS_KEY=your_access_key_here
+
+# 服务端API密钥
+DOUBAO_APP_ID=your_app_id_here
+DOUBAO_ACCESS_KEY=your_access_key_here
+```
+
 ### 启动开发服务器
 
 ```bash
