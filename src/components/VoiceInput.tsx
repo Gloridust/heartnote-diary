@@ -713,21 +713,6 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
             <p className="text-body" style={{ color: 'var(--text-secondary)' }}>
               点击开始语音对话
             </p>
-            {/* Safari和PWA用户特别提醒 */}
-            {(typeof window !== 'undefined' && 
-              ((/Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)) || 
-               (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches))) ? (
-              <div className="mt-2 p-2 rounded-lg border" style={{
-                backgroundColor: 'var(--surface-accent)',
-                borderColor: 'var(--primary-light)',
-                color: 'var(--text-primary)'
-              }}>
-                <p className="text-xs text-center">
-                  🍎 iOS WebApp模式：<br/>
-                  首次使用需要手动允许麦克风权限
-                </p>
-              </div>
-            ) : null}
           </div>
         ) : (
           /* 已连接状态 - 显示控制界面 */
