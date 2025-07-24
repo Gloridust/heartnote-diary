@@ -1,7 +1,7 @@
 // API接口封装
 import { DiaryEntry } from './data';
 
-const API_BASE_URL = 'http://127.0.0.1:5000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:5000';
 
 // 日记数据接口
 export interface DiaryApiRequest {

@@ -47,6 +47,9 @@ yarn install
 2. 创建 `.env.local` 文件并添加以下配置：
 
 ```bash
+# API服务器地址配置
+NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:5000
+
 # 字节跳动语音识别API配置
 BYTEDANCE_APP_KEY=your_app_key_here
 BYTEDANCE_ACCESS_TOKEN=your_access_token_here
@@ -61,6 +64,16 @@ NEXT_PUBLIC_DOUBAO_ACCESS_KEY=your_access_key_here
 DOUBAO_APP_ID=your_app_id_here
 DOUBAO_ACCESS_KEY=your_access_key_here
 ```
+
+#### 环境变量说明
+
+- **`NEXT_PUBLIC_API_BASE_URL`**: 后端API服务器地址
+  - 本地开发: `http://127.0.0.1:5000` 或 `http://localhost:5000`
+  - 生产环境: 修改为实际的API服务器地址
+- **`BYTEDANCE_APP_KEY`**: 字节跳动语音识别服务的应用密钥
+- **`BYTEDANCE_ACCESS_TOKEN`**: 字节跳动语音识别服务的访问令牌
+- **`ARK_API_KEY`**: 字节跳动大模型服务的API密钥
+- **`DOUBAO_MODEL`**: 使用的豆包模型名称
 
 ### 启动开发服务器
 

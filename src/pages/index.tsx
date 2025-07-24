@@ -235,7 +235,7 @@ export default function Home() {
       
       if (error instanceof Error) {
         if (error.message.includes('fetch')) {
-          errorMessage = '❌ 无法连接到服务器\n\n请确保：\n1. 服务器正在运行 (http://localhost:5000)\n2. 网络连接正常\n3. 服务器API正常工作';
+          errorMessage = '❌ 无法连接到服务器';
         } else {
           errorMessage = `❌ ${error.message}`;
         }
