@@ -1,0 +1,471 @@
+@import "tailwindcss";
+
+:root {
+  /* 颜色变量 - 严格按照设计稿定义 */
+  --primary-base: #B19CD9;
+  --primary-light: #D4C7E8;
+  --primary-dark: #9B7FC7;
+  
+  --background-page: #F7F7EC;
+  --surface-main: #FFFFF4;
+  --surface-light: rgba(255, 255, 255, 0.901961);
+  --surface-dark: #D6D6C2;
+  --surface-accent: #E8E0F7;
+  
+  --text-primary: #000000;
+  --text-secondary: #808080;
+  --text-tertiary: #999999;
+  --text-inverse: #FFFFFF;
+  
+  /* 圆角变量 */
+  --radius-small: 12px;
+  --radius-medium: 16px;
+  --radius-full: 50%;
+  
+  /* 字体大小 */
+  --font-size-caption: 10px;
+  --font-size-body: 12px;
+  --font-size-subtitle: 14px;
+  --font-size-title: 20px;
+  --font-size-heading: 30px;
+  --font-size-display: 40px;
+  
+  /* 间距单位 */
+  --spacing-tight: 8px;
+  --spacing-compact: 12px;
+  --spacing-standard: 16px;
+  --spacing-comfortable: 24px;
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background-page: #1a1a1a;
+    --surface-main: #2a2a2a;
+    --text-primary: #ffffff;
+    --text-secondary: #cccccc;
+  }
+}
+
+/* 基础样式 */
+body {
+  background: var(--background-page);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui;
+  line-height: 1.4;
+  margin: 0;
+  padding: 0;
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* 导航栏样式 - 严格按照设计稿 */
+.nav-bottom {
+  background-color: var(--surface-light);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  margin: 0 1.5rem 0.75rem 1.5rem;
+  padding: 1rem 0.25rem;
+  border-radius: 9999px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  color: var(--text-tertiary);
+  text-decoration: none;
+  transition: color 0.2s ease-in-out;
+  padding: 0.5rem;
+}
+
+.nav-item i {
+  margin-bottom: 0.25rem;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.nav-item span {
+  font-size: var(--font-size-body);
+  line-height: 1.33333;
+}
+
+.nav-item-active {
+  color: var(--text-primary);
+}
+
+.nav-item:hover {
+  color: rgba(107, 114, 128, 1);
+}
+
+/* 聊天气泡样式 - 严格按照设计稿 */
+.chat-bubble-ai {
+  background-color: var(--surface-accent);
+  align-self: flex-start;
+  max-width: 80%;
+  margin-bottom: 12px;
+  padding: 12px 16px;
+  border-radius: 16px 16px 16px 4px;
+  color: var(--text-primary);
+}
+
+.chat-bubble-user {
+  background-color: var(--primary-base);
+  align-self: flex-end;
+  max-width: 80%;
+  margin-bottom: 12px;
+  padding: 12px 16px;
+  color: var(--text-inverse);
+  border-radius: 16px 16px 4px 16px;
+}
+
+.chat-bubble-ai p,
+.chat-bubble-user p {
+  font-size: var(--font-size-body);
+  line-height: 1.33333;
+  margin: 0;
+}
+
+/* 日历样式 - 严格按照设计稿 */
+.calendar-container {
+  background-color: var(--surface-main);
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: var(--radius-medium);
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.calendar-nav-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 2rem;
+  height: 2rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.calendar-title {
+  font-size: var(--font-size-title);
+  font-weight: 500;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.calendar-weekday {
+  font-size: var(--font-size-body);
+  line-height: 1.33333;
+  color: var(--text-secondary);
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.25rem;
+}
+
+.calendar-day {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+  font-size: var(--font-size-body);
+  color: var(--text-primary);
+}
+
+.calendar-day:hover {
+  background-color: rgba(243, 244, 246, 1);
+}
+
+.calendar-day-selected {
+  background-color: var(--primary-base);
+  color: var(--text-inverse);
+}
+
+.calendar-day-selected:hover {
+  background-color: var(--primary-dark);
+}
+
+.calendar-day-with-diary {
+  background-color: var(--primary-light);
+  color: var(--text-primary);
+}
+
+.calendar-day-with-diary:hover {
+  background-color: rgba(196, 181, 216, 1);
+}
+
+/* 日记预览卡片 - 严格按照设计稿 */
+.diary-preview {
+  background-color: var(--surface-main);
+  margin: var(--spacing-standard) 0;
+  padding: var(--spacing-standard);
+  border-radius: var(--radius-medium);
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.diary-preview:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.diary-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.diary-preview-title {
+  font-size: var(--font-size-subtitle);
+  font-weight: 500;
+  line-height: 1.42857;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.diary-preview-time {
+  font-size: var(--font-size-body);
+  line-height: 1.33333;
+  color: var(--text-tertiary);
+}
+
+.diary-preview-content {
+  font-size: var(--font-size-body);
+  line-height: 1.33333;
+  color: var(--text-secondary);
+  margin: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+/* 输入框区域 - 严格按照设计稿 */
+.input-container {
+  margin-bottom: 0.75rem;
+  padding: 0 1rem;
+}
+
+.input-wrapper {
+  background-color: var(--surface-main);
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+}
+
+.input-field {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: var(--font-size-body);
+  color: var(--text-primary);
+}
+
+.input-field::placeholder {
+  color: var(--text-secondary);
+}
+
+.input-send-button {
+  background-color: var(--primary-base);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 2rem;
+  height: 2rem;
+  margin-left: 0.5rem;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.input-send-button:hover {
+  background-color: var(--primary-dark);
+}
+
+.input-send-button i {
+  color: var(--surface-main);
+}
+
+/* 按钮样式 - 严格按照设计稿 */
+.button-group {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin: 0.5rem 0 5rem 0;
+}
+
+.button-primary {
+  background-color: var(--primary-base);
+  padding: 0.5rem 1rem;
+  color: var(--text-inverse);
+  border-radius: 9999px;
+  border: none;
+  font-size: var(--font-size-body);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.button-primary:hover {
+  background-color: var(--primary-dark);
+}
+
+.button-secondary {
+  background-color: var(--surface-main);
+  padding: 0.5rem 1rem;
+  color: var(--text-primary);
+  border-radius: 9999px;
+  border: none;
+  font-size: var(--font-size-body);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.button-secondary:hover {
+  background-color: var(--surface-dark);
+}
+
+/* 按钮点击效果 */
+button:active {
+  transform: scale(0.98);
+}
+
+/* 输入框聚焦效果 */
+input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+input[type="text"] {
+  border: none;
+  outline: none;
+  background: transparent;
+}
+
+input[type="text"]:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+/* 文本截断样式 */
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 字体规范 */
+.text-caption {
+  font-size: var(--font-size-caption);
+  font-weight: 400;
+}
+
+.text-body {
+  font-size: var(--font-size-body);
+  font-weight: 400;
+}
+
+.text-subtitle {
+  font-size: var(--font-size-subtitle);
+  font-weight: 500;
+}
+
+.text-title {
+  font-size: var(--font-size-title);
+  font-weight: 500;
+}
+
+.text-heading {
+  font-size: var(--font-size-heading);
+  font-weight: 500;
+}
+
+.text-display {
+  font-size: var(--font-size-display);
+  font-weight: 500;
+}
+
+/* 平滑过渡 */
+* {
+  transition: all 0.2s ease-in-out;
+}
+
+/* 间距工具类 */
+.spacing-tight {
+  padding: var(--spacing-tight);
+}
+
+.spacing-compact {
+  padding: var(--spacing-compact);
+}
+
+.spacing-standard {
+  padding: var(--spacing-standard);
+}
+
+.spacing-comfortable {
+  padding: var(--spacing-comfortable);
+}
+
+/* 响应式优化 */
+@media (max-width: 640px) {
+  .nav-bottom {
+    margin: 0 1rem 0.5rem 1rem;
+  }
+  
+  .input-container {
+    padding: 0 0.5rem;
+  }
+  
+  .button-group {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
