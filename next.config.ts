@@ -6,8 +6,9 @@ const nextConfig: NextConfig = {
   
   // 环境变量配置
   env: {
-    // 外部数据库服务器地址（服务端使用）
-    EXTERNAL_API_BASE_URL: process.env.EXTERNAL_API_BASE_URL || 'http://127.0.0.1:5000',
+    // Supabase 配置（客户端和服务端共用）
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
   },
   
   // PWA 支持

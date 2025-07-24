@@ -33,7 +33,11 @@ src/
 
 ## 🚀 快速开始
 
-### 安装依赖
+### 1. 设置 Supabase 数据库
+
+请先阅读 [`docs/SUPABASE_SETUP.md`](docs/SUPABASE_SETUP.md) 完成 Supabase 数据库设置。
+
+### 2. 安装依赖
 
 ```bash
 npm install
@@ -41,14 +45,15 @@ npm install
 yarn install
 ```
 
-### 配置字节豆包API
+### 3. 配置字节豆包API
 
 1. 在 [火山引擎控制台](https://console.volcengine.com/) 注册并获取API密钥
 2. 创建 `.env.local` 文件并添加以下配置：
 
 ```bash
-# 外部数据库服务器地址配置（服务端使用，不会暴露给客户端）
-EXTERNAL_API_BASE_URL=http://38.225.100.22:5000
+# Supabase 数据库配置
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 # 字节跳动语音识别API配置
 BYTEDANCE_APP_KEY=your_app_key_here
@@ -67,16 +72,18 @@ DOUBAO_ACCESS_KEY=your_access_key_here
 
 #### 环境变量说明
 
-- **`EXTERNAL_API_BASE_URL`**: 外部数据库服务器地址（服务端使用）
-  - 本地开发: `http://127.0.0.1:5000` 或 `http://localhost:5000`
-  - 生产环境: `http://38.225.100.22:5000` 或实际的API服务器地址
-  - 注意：这个变量只在服务端使用，不会暴露给客户端
+- **`NEXT_PUBLIC_SUPABASE_URL`**: Supabase 项目 URL
+  - 在 Supabase 控制台的 Settings > API 中找到
+  - 格式: `https://your-project-ref.supabase.co`
+- **`NEXT_PUBLIC_SUPABASE_ANON_KEY`**: Supabase 匿名公钥
+  - 在 Supabase 控制台的 Settings > API 中找到
+  - 这是公开的密钥，可以安全地暴露给客户端
 - **`BYTEDANCE_APP_KEY`**: 字节跳动语音识别服务的应用密钥
 - **`BYTEDANCE_ACCESS_TOKEN`**: 字节跳动语音识别服务的访问令牌
 - **`ARK_API_KEY`**: 字节跳动大模型服务的API密钥
 - **`DOUBAO_MODEL`**: 使用的豆包模型名称
 
-### 启动开发服务器
+### 4. 启动开发服务器
 
 ```bash
 npm run dev

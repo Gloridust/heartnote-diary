@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { DiaryEntry } from '../lib/data';
-import { getUserDiaries, UserStorage, convertApiDataToDiaryEntry, extractDateFromApiString } from '../lib/api';
+import { getUserDiaries, UserStorage, convertApiDataToDiaryEntry, extractDateFromApiString, extractTimeFromApiString } from '../lib/api';
 import SettingsModal from '../components/SettingsModal';
 import DiaryDetailModal from '../components/DiaryDetailModal';
 
@@ -57,6 +57,14 @@ export default function Diary() {
         console.log('📊 转换后的日记条目:', convertedEntries);
         console.log('🗓️ 当前查看的月份:', currentMonth.toISOString().substring(0, 7));
         
+        // 详细调试信息
+        console.log('🔍 详细调试信息:');
+        response.data.forEach((entry, index) => {
+          console.log(`  ${index + 1}. 原始日期:`, entry.date);
+          console.log(`     提取日期:`, extractDateFromApiString(entry.date));
+          console.log(`     提取时间:`, extractTimeFromApiString(entry.date));
+        });
+        
         // 如果当前月份没有日记，自动跳转到第一个有日记的月份
         if (dates.length > 0) {
           const firstDiaryDate = dates[0]; // 例如: "2025-07-24"
@@ -70,7 +78,10 @@ export default function Diary() {
             const [year, month] = firstDiaryDate.split('-');
             const targetDate = new Date(parseInt(year), parseInt(month) - 1, 1);
             console.log('🔄 自动跳转到有日记的月份:', targetDate);
+            console.log('📅 跳转前月份:', currentMonthKey, '跳转后月份:', firstDiaryMonth);
             setCurrentMonth(targetDate);
+          } else {
+            console.log('✅ 当前月份已经是有日记的月份，无需跳转');
           }
         }
         
@@ -166,7 +177,8 @@ export default function Diary() {
 
       // 调试信息：只在有日记的日期打印
       if (hasDiary) {
-        console.log(`📅 日期 ${dateKey} 有日记:`, hasDiary, datesWithDiary);
+        console.log(`📅 日期 ${dateKey} 有日记:`, hasDiary);
+        console.log(`🗓️ 所有有日记的日期:`, datesWithDiary);
       }
 
       days.push(
@@ -192,7 +204,15 @@ export default function Diary() {
   const getSelectedDateEntries = () => {
     if (!selectedDate) return [];
     const dateKey = formatDateKey(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
-    return diaryEntries.filter(entry => entry.date === dateKey);
+    const filteredEntries = diaryEntries.filter(entry => entry.date === dateKey);
+    
+    console.log('🔍 getSelectedDateEntries 调试:');
+    console.log('   选中的日期:', selectedDate);
+    console.log('   日期键:', dateKey);
+    console.log('   所有日记条目:', diaryEntries);
+    console.log('   匹配的条目:', filteredEntries);
+    
+    return filteredEntries;
   };
 
   const navigateMonth = (direction: 'prev' | 'next') => {

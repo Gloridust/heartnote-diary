@@ -1,7 +1,7 @@
 // API接口封装
 import { DiaryEntry } from './data';
 
-// 使用本地Next.js API代理，避免跨域问题
+// 使用本地Next.js API路由，直接连接Supabase
 const API_BASE_URL = '/api';
 
 // 日记数据接口
@@ -43,7 +43,7 @@ export async function saveDiary(diaryData: DiaryApiRequest): Promise<DiaryApiRes
   try {
     console.log('📝 保存日记到数据库:', diaryData);
     
-    const response = await fetch(`${API_BASE_URL}/diary-proxy`, {
+    const response = await fetch(`${API_BASE_URL}/diary`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -70,7 +70,7 @@ export async function getUserDiaries(userId: number): Promise<DiaryListResponse>
   try {
     console.log('📖 获取用户日记:', userId);
     
-    const response = await fetch(`${API_BASE_URL}/diary-proxy?userId=${userId}`, {
+    const response = await fetch(`${API_BASE_URL}/diary?userId=${userId}`, {
       method: 'GET',
     });
 
@@ -121,14 +121,37 @@ export function formatDateForCalendar(date: Date): string {
 
 // 从API日期字符串提取日期部分 (YYYY-MM-DD)
 export function extractDateFromApiString(apiDateString: string): string {
-  return apiDateString.split(' ')[0]; // 取空格前的日期部分
+  // 处理两种格式：ISO格式 '2025-07-25T00:15:39+00:00' 和旧格式 '2025-07-25 23:49:23'
+  if (apiDateString.includes('T')) {
+    // ISO格式：取T前面的日期部分
+    return apiDateString.split('T')[0];
+  } else {
+    // 旧格式：取空格前的日期部分
+    return apiDateString.split(' ')[0];
+  }
 }
 
 // 从API日期字符串提取时间部分 (HH:MM)
 export function extractTimeFromApiString(apiDateString: string): string {
-  const timePart = apiDateString.split(' ')[1]; // 取空格后的时间部分
-  if (timePart) {
-    return timePart.substring(0, 5); // 只取HH:MM部分
+  try {
+    // 处理两种格式：ISO格式和旧格式
+    if (apiDateString.includes('T')) {
+      // ISO格式：解析为Date对象，然后格式化时间
+      const date = new Date(apiDateString);
+      return date.toLocaleTimeString('zh-CN', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      });
+    } else {
+      // 旧格式：取空格后的时间部分
+      const timePart = apiDateString.split(' ')[1];
+      if (timePart) {
+        return timePart.substring(0, 5); // 只取HH:MM部分
+      }
+    }
+  } catch (error) {
+    console.error('解析时间失败:', apiDateString, error);
   }
   return '00:00';
 }

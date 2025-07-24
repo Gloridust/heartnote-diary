@@ -17,18 +17,21 @@ cp .env.example .env.local
 
 ### 必需的环境变量
 
-#### API服务器配置
+#### Supabase 数据库配置
 
 ```bash
-# 外部数据库服务器地址（服务端使用）
-EXTERNAL_API_BASE_URL=http://38.225.100.22:5000
+# Supabase 项目 URL
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+
+# Supabase 匿名公钥
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **说明**：
-- 这个变量只在服务端使用，不会暴露给客户端（浏览器）
-- 前端通过Next.js API代理访问外部服务器，避免跨域问题
-- 本地开发时使用 `http://127.0.0.1:5000` 或 `http://localhost:5000`
-- 生产环境时使用 `http://38.225.100.22:5000` 或实际的API服务器地址
+- `NEXT_PUBLIC_` 前缀表示这些变量会暴露给客户端（浏览器）
+- Supabase 匿名密钥是公开的，可以安全地在客户端使用
+- 在 Supabase 控制台的 Settings > API 页面获取这些值
+- 项目 URL 格式：`https://项目ID.supabase.co`
 - 修改后需要重启开发服务器
 
 #### 字节跳动API配置
@@ -61,7 +64,8 @@ DOUBAO_MODEL=doubao-1-5-pro-32k-250115
 
 ```bash
 # .env.local
-EXTERNAL_API_BASE_URL=http://127.0.0.1:5000
+NEXT_PUBLIC_SUPABASE_URL=https://your-dev-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_dev_anon_key
 BYTEDANCE_APP_KEY=dev_app_key
 BYTEDANCE_ACCESS_TOKEN=dev_access_token
 ARK_API_KEY=dev_ark_api_key
@@ -71,7 +75,8 @@ ARK_API_KEY=dev_ark_api_key
 
 ```bash
 # .env.production
-EXTERNAL_API_BASE_URL=http://38.225.100.22:5000
+NEXT_PUBLIC_SUPABASE_URL=https://your-prod-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_prod_anon_key
 BYTEDANCE_APP_KEY=prod_app_key
 BYTEDANCE_ACCESS_TOKEN=prod_access_token
 ARK_API_KEY=prod_ark_api_key
@@ -81,7 +86,8 @@ ARK_API_KEY=prod_ark_api_key
 
 ```bash
 # .env.test
-EXTERNAL_API_BASE_URL=http://test-api.yourdomain.com:5000
+NEXT_PUBLIC_SUPABASE_URL=https://your-test-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_test_anon_key
 BYTEDANCE_APP_KEY=test_app_key
 BYTEDANCE_ACCESS_TOKEN=test_access_token
 ARK_API_KEY=test_ark_api_key
@@ -137,8 +143,9 @@ console.log('API Base URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
 # 信语日记应用环境变量配置
 # ===========================================
 
-# 外部数据库服务器地址（服务端使用）
-EXTERNAL_API_BASE_URL=http://38.225.100.22:5000
+# Supabase 数据库配置
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 # 字节跳动语音识别API
 BYTEDANCE_APP_KEY=your_bytedance_app_key_here
