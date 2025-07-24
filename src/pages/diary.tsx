@@ -65,24 +65,35 @@ export default function Diary() {
           console.log(`     提取时间:`, extractTimeFromApiString(entry.date));
         });
         
-        // 如果当前月份没有日记，自动跳转到第一个有日记的月份
+        // 自动跳转到最新有日记的月份并选中日期
         if (dates.length > 0) {
-          const firstDiaryDate = dates[0]; // 例如: "2025-07-24"
+          const latestDiaryDate = dates[0]; // 例如: "2025-07-25" (已按日期降序排列)
           const currentMonthKey = currentMonth.toISOString().substring(0, 7); // 例如: "2025-01"
-          const firstDiaryMonth = firstDiaryDate.substring(0, 7); // 例如: "2025-07"
+          const latestDiaryMonth = latestDiaryDate.substring(0, 7); // 例如: "2025-07"
           
-          console.log('🗓️ 第一个日记的月份:', firstDiaryMonth);
+          console.log('🗓️ 最新日记的日期:', latestDiaryDate);
+          console.log('🗓️ 最新日记的月份:', latestDiaryMonth);
           console.log('🗓️ 当前查看月份:', currentMonthKey);
           
-          if (currentMonthKey !== firstDiaryMonth) {
-            const [year, month] = firstDiaryDate.split('-');
-            const targetDate = new Date(parseInt(year), parseInt(month) - 1, 1);
-            console.log('🔄 自动跳转到有日记的月份:', targetDate);
-            console.log('📅 跳转前月份:', currentMonthKey, '跳转后月份:', firstDiaryMonth);
-            setCurrentMonth(targetDate);
-          } else {
-            console.log('✅ 当前月份已经是有日记的月份，无需跳转');
+          // 解析最新日记的完整日期
+          const [year, month, day] = latestDiaryDate.split('-');
+          const latestDiaryFullDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+          
+          // 如果月份不同，先跳转月份
+          if (currentMonthKey !== latestDiaryMonth) {
+            const targetMonthDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+            console.log('🔄 自动跳转到有日记的月份:', targetMonthDate);
+            console.log('📅 跳转前月份:', currentMonthKey, '跳转后月份:', latestDiaryMonth);
+            setCurrentMonth(targetMonthDate);
           }
+          
+          // 自动选中最新日记的日期
+          console.log('📅 自动选中最新日记的日期:', latestDiaryFullDate);
+          setSelectedDate(latestDiaryFullDate);
+          
+        } else {
+          console.log('ℹ️ 没有日记数据，清除选中日期');
+          setSelectedDate(null);
         }
         
       } else if (response.status === 'error') {
@@ -113,6 +124,7 @@ export default function Diary() {
   // 刷新数据
   const refreshData = () => {
     if (currentUserId) {
+      console.log('🔄 手动刷新数据，将自动选中最新日记');
       loadUserDiaries(currentUserId);
     }
   };
@@ -345,6 +357,9 @@ export default function Diary() {
           <div className="space-y-4">
             <h3 className="text-subtitle mb-4" style={{ color: 'var(--text-primary)' }}>
               {selectedDate.getFullYear()}年{selectedDate.getMonth() + 1}月{selectedDate.getDate()}日
+              <span className="ml-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                📅 自动选中最新日记
+              </span>
             </h3>
             
             {getSelectedDateEntries().length > 0 ? (
@@ -400,6 +415,16 @@ export default function Diary() {
           </div>
         )}
 
+        {/* 提示信息：有数据但没有选中日期时 */}
+        {!isLoading && !error && diaryEntries.length > 0 && !selectedDate && (
+          <div className="text-center py-8">
+            <div className="text-4xl mb-4">📅</div>
+            <p className="text-body" style={{ color: 'var(--text-secondary)' }}>
+              点击日历上有标记的日期查看日记
+            </p>
+          </div>
+        )}
+
         {/* 无数据空状态 */}
         {!isLoading && !error && diaryEntries.length === 0 && (
           <div className="empty-state text-center py-16">
@@ -442,7 +467,9 @@ export default function Diary() {
         onUserIdChange={(newUserId) => {
           console.log('👤 日记页面用户ID已更新:', newUserId);
           setCurrentUserId(newUserId);
-          loadUserDiaries(newUserId); // 重新加载新用户的数据
+          // 清除当前选中的日期，重新加载新用户的数据并自动选中最新日记
+          setSelectedDate(null);
+          loadUserDiaries(newUserId);
         }}
       />
 
