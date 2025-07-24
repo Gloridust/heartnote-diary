@@ -714,14 +714,14 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
               点击开始语音对话
             </p>
             {/* Safari用户特别提醒 */}
-            {/Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent) && (
+            {/* {/Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent) && (
               <div className="mt-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
                 <p className="text-xs text-blue-700 text-center">
                   🍎 Safari用户请注意：<br/>
                   首次使用需要手动允许麦克风权限
                 </p>
               </div>
-            )}
+            )} */}
           </div>
         ) : (
           /* 已连接状态 - 显示控制界面 */
