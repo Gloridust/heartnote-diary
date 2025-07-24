@@ -64,20 +64,58 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
         onInitConversation();
       }
       
-      // 获取麦克风权限
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
+      // 检查浏览器兼容性
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('您的浏览器不支持录音功能');
+      }
+
+      // 获取麦克风权限 - 移动设备优化
+      let audioConstraints: MediaStreamConstraints['audio'];
+      
+      // 检测是否为移动设备
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        // 移动设备使用简化的音频配置
+        audioConstraints = {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        };
+      } else {
+        // 桌面设备使用完整配置
+        audioConstraints = {
           sampleRate: 16000,
           channelCount: 1,
           echoCancellation: true,
-          noiseSuppression: true
-        }
+          noiseSuppression: true,
+          autoGainControl: true
+        };
+      }
+
+      console.log('🎤 请求麦克风权限，设备类型:', isMobile ? '移动设备' : '桌面设备');
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: audioConstraints
       });
 
-      // 创建MediaRecorder
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus'
-      });
+      // 创建MediaRecorder - 移动设备兼容性处理
+      const mediaRecorderOptions: MediaRecorderOptions = {};
+      
+      // 检查支持的MIME类型
+      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+        mediaRecorderOptions.mimeType = 'audio/webm;codecs=opus';
+      } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+        mediaRecorderOptions.mimeType = 'audio/webm';
+      } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+        mediaRecorderOptions.mimeType = 'audio/mp4';
+      } else if (MediaRecorder.isTypeSupported('audio/aac')) {
+        mediaRecorderOptions.mimeType = 'audio/aac';
+      } else {
+        console.warn('⚠️ 使用默认音频格式');
+      }
+
+      console.log('🎵 使用音频格式:', mediaRecorderOptions.mimeType || 'default');
+      const mediaRecorder = new MediaRecorder(stream, mediaRecorderOptions);
 
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
@@ -109,9 +147,31 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
       
       console.log('🎤 录音已开始');
 
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to start recording:', error);
-      setError('无法访问麦克风，请检查权限设置');
+      
+      // 根据错误类型提供更详细的提示
+      let errorMessage = '无法访问麦克风';
+      
+      if (error instanceof Error) {
+        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+          errorMessage = '麦克风权限被拒绝，请在浏览器设置中允许麦克风访问';
+        } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+          errorMessage = '未找到麦克风设备，请确保麦克风已连接';
+        } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+          errorMessage = '麦克风被其他应用占用，请关闭其他录音应用';
+        } else if (error.name === 'OverconstrainedError' || error.name === 'ConstraintNotSatisfiedError') {
+          errorMessage = '麦克风不支持所需的录音格式';
+        } else if (error.name === 'NotSupportedError') {
+          errorMessage = '您的浏览器不支持录音功能，请更新浏览器或使用其他浏览器';
+        } else if (error.name === 'SecurityError') {
+          errorMessage = '安全限制：请使用HTTPS协议访问此页面';
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+      }
+      
+      setError(errorMessage);
     }
   };
 
@@ -327,14 +387,36 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
       {/* 错误提示 */}
       {error && (
         <div className="error-message" style={{ 
-          backgroundColor: 'var(--surface-accent)', 
-          color: 'var(--text-primary)',
+          backgroundColor: '#fef2f2', 
+          color: '#dc2626',
           padding: 'var(--spacing-compact)',
           borderRadius: 'var(--radius-medium)',
-          marginBottom: 'var(--spacing-compact)'
+          marginBottom: 'var(--spacing-compact)',
+          border: '1px solid #fecaca'
         }}>
-          <span>{error}</span>
-          <button onClick={clearError} className="ml-2 text-red-600">✕</button>
+          <div className="flex items-start space-x-2">
+            <span className="text-lg">⚠️</span>
+            <div className="flex-1">
+              <p className="text-sm font-medium mb-1">{error}</p>
+              {error.includes('权限') && (
+                <div className="text-xs text-gray-600 mt-2">
+                  <p>📱 移动设备用户请：</p>
+                  <ul className="list-disc list-inside mt-1 space-y-1">
+                    <li>点击地址栏左侧的🔒图标</li>
+                    <li>选择&quot;麦克风&quot;→&quot;允许&quot;</li>
+                    <li>刷新页面重试</li>
+                  </ul>
+                </div>
+              )}
+            </div>
+            <button 
+              onClick={clearError} 
+              className="text-red-600 hover:text-red-800 font-bold text-lg"
+              style={{ lineHeight: '1' }}
+            >
+              ✕
+            </button>
+          </div>
         </div>
       )}
 
