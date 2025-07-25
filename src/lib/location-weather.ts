@@ -151,32 +151,51 @@ export async function getAddressFromCoordinates(
 }
 
 /**
- * 格式化中文地址
+ * 格式化中文地址 - 市+精确位置（已弃用，现在使用API代理）
  */
 function formatChineseAddress(address: {
   state?: string;
   city?: string;
   town?: string;
+  village?: string;
   suburb?: string;
   district?: string;
   county?: string;
   road?: string;
   pedestrian?: string;
+  house_number?: string;
+  amenity?: string;
+  shop?: string;
+  building?: string;
   display_name?: string;
 }): string {
-  const parts = [];
+  const city = address.city || address.town || address.village || '';
+  const preciseLocation = [];
   
-  // 按照中文地址习惯组织：省市区街道
-  if (address.state) parts.push(address.state);
-  if (address.city || address.town) parts.push(address.city || address.town);
+  // 收集精确位置信息：区/街道/建筑
   if (address.suburb || address.district || address.county) {
-    parts.push(address.suburb || address.district || address.county);
+    preciseLocation.push(address.suburb || address.district || address.county);
   }
   if (address.road || address.pedestrian) {
-    parts.push(address.road || address.pedestrian);
+    preciseLocation.push(address.road || address.pedestrian);
+  }
+  if (address.house_number) {
+    preciseLocation.push(address.house_number + '号');
+  }
+  if (address.amenity || address.shop || address.building) {
+    preciseLocation.push(address.amenity || address.shop || address.building);
   }
   
-  return parts.join('') || address.display_name || '位置未知';
+  // 格式：市+精确位置
+  if (city && preciseLocation.length > 0) {
+    return city + preciseLocation.join('');
+  } else if (city) {
+    return city;
+  } else if (preciseLocation.length > 0) {
+    return preciseLocation.join('');
+  }
+  
+  return address.display_name || '位置未知';
 }
 
 /**
