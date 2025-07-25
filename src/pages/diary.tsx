@@ -498,12 +498,12 @@ export default function Diary() {
 
         {/* 选中日期的日记列表 */}
         {selectedDate && !isLoading && (
-          <div className="space-y-4">
+          <div className="space-y-4 mt-8">
             <h3 className="text-subtitle mb-4" style={{ color: 'var(--text-primary)' }}>
               {selectedDate.getFullYear()}年{selectedDate.getMonth() + 1}月{selectedDate.getDate()}日
-              <span className="ml-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+              {/* <span className="ml-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>
                 📅 自动选中最新日记
-              </span>
+              </span> */}
             </h3>
             
             {getSelectedDateEntries().length > 0 ? (
