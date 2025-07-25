@@ -735,7 +735,7 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
                   justifyContent: 'center'
                 }}
               >
-                🎤
+                {/* 🎤 */}
               </button>
             <p className="text-body" style={{ color: 'var(--text-secondary)' }}>
               点击开始语音对话
