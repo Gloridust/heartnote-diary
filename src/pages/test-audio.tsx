@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import LocationWeatherStatus from '../components/LocationWeatherStatus';
+import PWADebugInfo from '../components/PWADebugInfo';
 
 interface TestResult {
   test: string;
@@ -262,6 +263,9 @@ export default function TestAudio() {
           </Link>
         </div>
       </div>
+      
+      {/* PWA调试信息 */}
+      <PWADebugInfo />
     </div>
   );
 } 

@@ -13,9 +13,10 @@ export default function Document() {
         
         {/* iOS WebApp配置 */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-touch-fullscreen" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="format-detection" content="telephone=no" />
         
         {/* 视口和缩放配置 */}
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
@@ -25,9 +26,6 @@ export default function Document() {
         <meta name="msapplication-TileColor" content="#8B7B6B" />
         <meta name="msapplication-navbutton-color" content="#8B7B6B" />
         
-        {/* iOS状态栏颜色 */}
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        
         {/* 图标配置 */}
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
@@ -35,16 +33,17 @@ export default function Document() {
         <link rel="icon" type="image/png" sizes="192x192" href="/favicon.png" />
         <link rel="shortcut icon" href="/favicon.png" />
         
-        {/* Apple Touch图标 */}
-        <link rel="apple-touch-icon" href="/favicon.png" />
-        <link rel="apple-touch-icon" sizes="72x72" href="/favicon.png" />
-        <link rel="apple-touch-icon" sizes="96x96" href="/favicon.png" />
-        <link rel="apple-touch-icon" sizes="128x128" href="/favicon.png" />
-        <link rel="apple-touch-icon" sizes="144x144" href="/favicon.png" />
-        <link rel="apple-touch-icon" sizes="152x152" href="/favicon.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/favicon.png" />
-        <link rel="apple-touch-icon" sizes="192x192" href="/favicon.png" />
-        <link rel="apple-touch-icon" sizes="512x512" href="/favicon.png" />
+        {/* Apple Touch图标 - iOS标准尺寸 */}
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180x180.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon-180x180.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/icons/apple-touch-icon-152x152.png" />
+        <link rel="apple-touch-icon" sizes="144x144" href="/icons/apple-touch-icon-144x144.png" />
+        <link rel="apple-touch-icon" sizes="120x120" href="/icons/apple-touch-icon-120x120.png" />
+        <link rel="apple-touch-icon" sizes="114x114" href="/icons/apple-touch-icon-114x114.png" />
+        <link rel="apple-touch-icon" sizes="76x76" href="/icons/apple-touch-icon-76x76.png" />
+        <link rel="apple-touch-icon" sizes="72x72" href="/icons/apple-touch-icon-72x72.png" />
+        <link rel="apple-touch-icon" sizes="60x60" href="/icons/apple-touch-icon-60x60.png" />
+        <link rel="apple-touch-icon" sizes="57x57" href="/icons/apple-touch-icon-57x57.png" />
         
         {/* Microsoft配置 */}
         <meta name="msapplication-TileImage" content="/favicon.png" />

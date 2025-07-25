@@ -2,7 +2,7 @@
   "name": "信语日记 - AI对话式日记应用",
   "short_name": "信语日记",
   "description": "AI驱动的对话式日记应用，用语音记录生活点滴，智能生成日记内容",
-  "start_url": "/?utm_source=pwa",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#F7F7EC",
   "theme_color": "#8B7B6B",
@@ -19,7 +19,7 @@
       "url": "/?action=record",
       "icons": [
         {
-          "src": "/favicon.png",
+          "src": "/icons/icon-96x96.png",
           "sizes": "96x96"
         }
       ]
@@ -31,7 +31,7 @@
       "url": "/diary?action=view",
       "icons": [
         {
-          "src": "/favicon.png",
+          "src": "/icons/icon-96x96.png",
           "sizes": "96x96"
         }
       ]
@@ -39,49 +39,49 @@
   ],
   "icons": [
     {
-      "src": "/favicon.png",
+      "src": "/icons/apple-touch-icon-72x72.png",
       "sizes": "72x72",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/favicon.png",
+      "src": "/icons/icon-96x96.png",
       "sizes": "96x96",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/favicon.png",
-      "sizes": "128x128",
+      "src": "/icons/apple-touch-icon-120x120.png",
+      "sizes": "120x120",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/favicon.png",
+      "src": "/icons/apple-touch-icon-144x144.png",
       "sizes": "144x144",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/favicon.png",
+      "src": "/icons/apple-touch-icon-152x152.png",
       "sizes": "152x152",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/favicon.png",
+      "src": "/icons/apple-touch-icon-180x180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/favicon.png",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/favicon.png", 
+      "src": "/icons/icon-512x512.png", 
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
