@@ -27,10 +27,10 @@ export interface LocationWeatherData {
 }
 
 // OpenWeatherMap API 密钥 - 客户端环境变量
-const OPENWEATHER_API_KEY = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY;
+// OpenWeather API密钥现在在服务器端使用，前端不再需要
 
 /**
- * 获取用户当前位置 - iOS Safari优化版本
+ * 获取用户当前位置
  */
 export function getCurrentPosition(): Promise<GeolocationPosition> {
   return new Promise((resolve, reject) => {
@@ -39,117 +39,106 @@ export function getCurrentPosition(): Promise<GeolocationPosition> {
       return;
     }
 
-    // 检测是否为iOS设备
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    
-    // iOS Safari需要更保守的配置
-    const options: PositionOptions = {
-      enableHighAccuracy: isIOS ? false : true, // iOS上禁用高精度以提高成功率
-      timeout: isIOS ? 15000 : 10000, // iOS给更长的超时时间
-      maximumAge: isIOS ? 600000 : 300000 // iOS使用更长的缓存时间(10分钟)
-    };
+    console.log('📱 检测设备类型:', {
+      isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
+      isStandalone: window.matchMedia('(display-mode: standalone)').matches,
+      userAgent: navigator.userAgent
+    });
 
-    console.log(`📍 开始获取GPS位置 (${isIOS ? 'iOS' : '其他'} 设备)`);
-    console.log('📍 配置选项:', options);
+    // iOS Safari 需要特殊处理
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const timeout = isIOS ? 15000 : 10000; // iOS需要更长超时时间
+    const maximumAge = isIOS ? 60000 : 300000; // iOS使用更短缓存
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
         console.log('📍 GPS位置获取成功:', position.coords);
-        console.log('📍 精度:', position.coords.accuracy, 'meters');
+        console.log('🕐 位置时间戳:', new Date(position.timestamp));
         resolve(position);
       },
       (error) => {
         console.error('❌ GPS位置获取失败:', error);
+        console.log('🔍 错误详情:', {
+          code: error.code,
+          message: error.message,
+          isIOS,
+          timestamp: new Date().toISOString()
+        });
+        
         let errorMessage = '获取位置失败';
         
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            errorMessage = isIOS 
-              ? 'iOS需要在设置中开启位置权限，并确保在HTTPS环境下访问' 
-              : '用户拒绝了位置权限请求';
+            errorMessage = isIOS ? 
+              'iOS设备需要在Safari设置中允许位置访问，并在页面权限中允许此网站' : 
+              '用户拒绝了位置权限请求';
             break;
           case error.POSITION_UNAVAILABLE:
-            errorMessage = isIOS 
-              ? 'iOS位置服务不可用，请检查设备定位是否开启' 
-              : '位置信息不可用';
+            errorMessage = isIOS ? 
+              'iOS位置服务不可用，请确保GPS已开启并允许Safari访问位置' :
+              '位置信息不可用';
             break;
           case error.TIMEOUT:
-            errorMessage = isIOS 
-              ? 'iOS位置获取超时，请确保GPS信号良好' 
-              : '获取位置超时';
+            errorMessage = isIOS ? 
+              'iOS位置获取超时，请确保网络连接良好并重试' :
+              '获取位置超时';
             break;
           default:
-            errorMessage = '未知的位置错误';
+            errorMessage = `未知的位置错误 (代码: ${error.code})`;
             break;
         }
         
         reject(new Error(errorMessage));
       },
-      options
+      {
+        enableHighAccuracy: true,
+        timeout: timeout,
+        maximumAge: maximumAge
+      }
     );
   });
 }
 
 /**
- * 使用OpenStreetMap逆地理编码获取详细地址 - iOS Safari兼容版本
+ * 使用Next.js API代理进行逆地理编码（iOS兼容）
  */
 export async function getAddressFromCoordinates(
   latitude: number, 
   longitude: number
 ): Promise<LocationInfo> {
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  
   try {
-    console.log(`🗺️ 开始逆地理编码 (${isIOS ? 'iOS' : '其他'} 设备):`, latitude, longitude);
+    console.log('🗺️ 开始逆地理编码 (通过Next.js API):', latitude, longitude);
     
-    // iOS Safari的网络请求配置
-    const fetchOptions: RequestInit = {
-      headers: {
-        'User-Agent': 'HeartnoteApp/1.0',
-        'Accept': 'application/json',
-        'Accept-Language': 'zh-CN,zh'
-      },
-      // iOS Safari需要显式设置
-      mode: 'cors',
-      cache: 'default'
-    };
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), isIOS ? 15000 : 10000);
-
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1&accept-language=zh-CN,zh`,
+      `/api/geocoding?lat=${latitude}&lon=${longitude}`,
       {
-        ...fetchOptions,
-        signal: controller.signal
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       }
     );
 
-    clearTimeout(timeoutId);
-
     if (!response.ok) {
-      throw new Error(`逆地理编码请求失败: ${response.status} ${response.statusText}`);
+      throw new Error(`地理编码API请求失败: ${response.status}`);
     }
 
-    const data = await response.json();
-    console.log('🏠 逆地理编码结果:', data);
+    const result = await response.json();
+    console.log('🏠 地理编码API响应:', result);
 
-    if (!data || !data.address) {
-      throw new Error('未找到地址信息');
+    if (result.status !== 'success' || !result.data) {
+      throw new Error(result.message || '地理编码失败');
     }
 
-    const address = data.address;
-    
-    // 构建详细地址信息
     const locationInfo: LocationInfo = {
       latitude,
       longitude,
-      address: data.display_name || '',
-      city: address.city || address.town || address.village || '',
-      district: address.suburb || address.district || address.county || '',
-      street: address.road || address.pedestrian || '',
-      country: address.country || '',
-      formatted_address: formatChineseAddress(address)
+      address: result.data.address,
+      city: result.data.city,
+      district: result.data.district,
+      street: result.data.street,
+      country: result.data.country,
+      formatted_address: result.data.formatted_address
     };
 
     console.log('📍 格式化的位置信息:', locationInfo);
@@ -157,22 +146,6 @@ export async function getAddressFromCoordinates(
 
   } catch (error) {
     console.error('❌ 逆地理编码失败:', error);
-    
-    // iOS Safari fallback: 当逆地理编码失败时，返回基础位置信息
-    if (isIOS) {
-      console.log('🔄 iOS fallback: 使用基础位置信息');
-      return {
-        latitude,
-        longitude,
-        address: `位置: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
-        city: '未知城市',
-        district: '未知区域',
-        street: '未知街道',
-        country: '未知国家',
-        formatted_address: `纬度${latitude.toFixed(4)}, 经度${longitude.toFixed(4)}`
-      };
-    }
-    
     throw error;
   }
 }
@@ -207,52 +180,43 @@ function formatChineseAddress(address: {
 }
 
 /**
- * 使用OpenWeatherMap获取天气信息 - iOS Safari兼容版本
+ * 使用Next.js API代理获取天气信息（iOS兼容）
  */
 export async function getWeatherFromCoordinates(
   latitude: number, 
   longitude: number
 ): Promise<WeatherInfo> {
-  if (!OPENWEATHER_API_KEY) {
-    throw new Error('OpenWeatherMap API密钥未配置。请在 .env.local 文件中设置 NEXT_PUBLIC_OPENWEATHER_API_KEY 并重启开发服务器');
-  }
-
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-
   try {
-    console.log(`🌤️ 开始获取天气信息 (${isIOS ? 'iOS' : '其他'} 设备):`, latitude, longitude);
-    
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), isIOS ? 15000 : 10000);
+    console.log('🌤️ 开始获取天气信息 (通过Next.js API):', latitude, longitude);
     
     const response = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=zh_cn`,
+      `/api/weather?lat=${latitude}&lon=${longitude}`,
       {
-        signal: controller.signal,
+        method: 'GET',
         headers: {
-          'Accept': 'application/json'
-        },
-        mode: 'cors',
-        cache: 'default'
+          'Content-Type': 'application/json'
+        }
       }
     );
 
-    clearTimeout(timeoutId);
-
     if (!response.ok) {
-      throw new Error(`天气API请求失败: ${response.status} ${response.statusText}`);
+      throw new Error(`天气API请求失败: ${response.status}`);
     }
 
-    const data = await response.json();
-    console.log('🌦️ 天气API结果:', data);
+    const result = await response.json();
+    console.log('🌦️ 天气API响应:', result);
+
+    if (result.status !== 'success' || !result.data) {
+      throw new Error(result.message || '天气信息获取失败');
+    }
 
     const weatherInfo: WeatherInfo = {
-      temperature: Math.round(data.main.temp),
-      description: data.weather[0].description,
-      icon: data.weather[0].icon,
-      humidity: data.main.humidity,
-      wind_speed: data.wind?.speed || 0,
-      feels_like: Math.round(data.main.feels_like)
+      temperature: result.data.temperature,
+      description: result.data.description,
+      icon: result.data.icon,
+      humidity: result.data.humidity,
+      wind_speed: result.data.wind_speed,
+      feels_like: result.data.feels_like
     };
 
     console.log('🌡️ 格式化的天气信息:', weatherInfo);
@@ -260,20 +224,6 @@ export async function getWeatherFromCoordinates(
 
   } catch (error) {
     console.error('❌ 获取天气失败:', error);
-    
-    // iOS Safari fallback: 当天气API失败时，返回默认天气信息
-    if (isIOS) {
-      console.log('🔄 iOS fallback: 使用默认天气信息');
-      return {
-        temperature: 20,
-        description: '天气信息获取失败',
-        icon: '01d',
-        humidity: 50,
-        wind_speed: 0,
-        feels_like: 20
-      };
-    }
-    
     throw error;
   }
 }
