@@ -363,9 +363,9 @@ export default function Home() {
       {/* 头部导航 - 固定在顶部 */}
       <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between spacing-standard" style={{ backgroundColor: 'var(--background-page)' }}>
         <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--primary-base)' }}>
+          {/* <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--primary-base)' }}>
             <span style={{ color: 'var(--text-inverse)' }} className="text-lg">📔</span>
-          </div>
+          </div> */}
           <h1 className="text-title" style={{ color: 'var(--text-primary)' }}>信语日记</h1>
         </div>
         <div className="flex items-center space-x-2">
