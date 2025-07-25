@@ -18,8 +18,7 @@ export default function Document() {
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="format-detection" content="telephone=no" />
         
-        {/* 视口和缩放配置 */}
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+        {/* 视口配置已移到_app.tsx或具体页面中 */}
         
         {/* 主题颜色 */}
         <meta name="theme-color" content="#8B7B6B" />

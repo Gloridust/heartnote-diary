@@ -258,11 +258,45 @@ export async function getLocationAndWeather(): Promise<LocationWeatherData> {
     const position = await getCurrentPosition();
     const { latitude, longitude } = position.coords;
 
-    // 2. 并行获取地址和天气信息
-    const [location, weather] = await Promise.all([
+    // 2. 并行获取地址和天气信息，天气失败不影响位置
+    const [locationResult, weatherResult] = await Promise.allSettled([
       getAddressFromCoordinates(latitude, longitude),
       getWeatherFromCoordinates(latitude, longitude)
     ]);
+
+    // 处理地址信息
+    let location: LocationInfo;
+    if (locationResult.status === 'fulfilled') {
+      location = locationResult.value;
+    } else {
+      console.warn('⚠️ 地址获取失败，使用默认值:', locationResult.reason);
+      location = {
+        latitude,
+        longitude,
+        address: '位置未知',
+        city: '',
+        district: '',
+        street: '',
+        country: '',
+        formatted_address: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+      };
+    }
+
+    // 处理天气信息
+    let weather: WeatherInfo;
+    if (weatherResult.status === 'fulfilled') {
+      weather = weatherResult.value;
+    } else {
+      console.warn('⚠️ 天气获取失败，使用默认值:', weatherResult.reason);
+      weather = {
+        temperature: 0,
+        description: '天气信息获取失败',
+        icon: '01d',
+        humidity: 0,
+        wind_speed: 0,
+        feels_like: 0
+      };
+    }
 
     const result: LocationWeatherData = {
       location,

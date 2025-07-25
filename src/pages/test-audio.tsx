@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Head from 'next/head';
 import LocationWeatherStatus from '../components/LocationWeatherStatus';
 import PWADebugInfo from '../components/PWADebugInfo';
 
@@ -146,7 +147,13 @@ export default function TestAudio() {
   };
 
   return (
-    <div style={{ backgroundColor: 'var(--background-page)' }} className="min-h-screen pb-20">
+    <>
+      <Head>
+        <title>音频测试 - 信语日记</title>
+        <meta name="description" content="诊断音频和位置天气功能" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+      </Head>
+      <div style={{ backgroundColor: 'var(--background-page)' }} className="min-h-screen pb-20">
       {/* 头部导航 */}
       <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between spacing-standard" 
               style={{ backgroundColor: 'var(--background-page)' }}>
@@ -267,5 +274,6 @@ export default function TestAudio() {
       {/* PWA调试信息 */}
       <PWADebugInfo />
     </div>
+    </>
   );
 } 

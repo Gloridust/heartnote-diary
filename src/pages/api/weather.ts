@@ -56,13 +56,30 @@ export default async function handler(
 
     console.log('🌤️ 服务器端获取天气信息:', latitude, longitude);
 
-    // 使用OpenWeatherMap API
-    const weatherResponse = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=zh_cn`
-    );
+    // 使用OpenWeatherMap API，增加超时和重试机制
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
 
-    if (!weatherResponse.ok) {
-      throw new Error(`天气API请求失败: ${weatherResponse.status}`);
+    let weatherResponse;
+    try {
+      weatherResponse = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=zh_cn`,
+        {
+          signal: controller.signal,
+          headers: {
+            'User-Agent': 'HeartnoteApp/1.0'
+          }
+        }
+      );
+
+      clearTimeout(timeoutId);
+
+      if (!weatherResponse.ok) {
+        throw new Error(`天气API请求失败: ${weatherResponse.status} ${weatherResponse.statusText}`);
+      }
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      throw fetchError;
     }
 
     const weatherData = await weatherResponse.json();
@@ -92,11 +109,24 @@ export default async function handler(
     console.error('❌ 天气API错误:', error);
     
     let errorMessage = '获取天气信息失败';
+    let statusCode = 500;
+    
     if (error instanceof Error) {
-      errorMessage = error.message;
+      if (error.name === 'AbortError') {
+        errorMessage = '天气API请求超时，请稍后重试';
+        statusCode = 408;
+      } else if (error.message.includes('ECONNRESET') || error.message.includes('network')) {
+        errorMessage = '网络连接问题，天气信息暂时无法获取';
+        statusCode = 503;
+      } else if (error.message.includes('fetch failed')) {
+        errorMessage = '天气服务暂时不可用，请稍后重试';
+        statusCode = 503;
+      } else {
+        errorMessage = error.message;
+      }
     }
 
-    res.status(500).json({
+    res.status(statusCode).json({
       status: 'error',
       message: errorMessage
     });

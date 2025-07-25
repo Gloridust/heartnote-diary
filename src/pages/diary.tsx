@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Head from 'next/head';
 import { DiaryEntry } from '../lib/data';
 import { getUserDiaries, UserStorage, convertApiDataToDiaryEntry, extractDateFromApiString, extractTimeFromApiString } from '../lib/api';
 import SettingsModal from '../components/SettingsModal';
@@ -240,7 +241,13 @@ export default function Diary() {
   };
 
   return (
-    <div style={{ backgroundColor: 'var(--background-page)' }} className="min-h-screen pb-20">
+    <>
+      <Head>
+        <title>日记本 - 信语日记</title>
+        <meta name="description" content="浏览和管理你的日记记录" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+      </Head>
+      <div style={{ backgroundColor: 'var(--background-page)' }} className="min-h-screen pb-20">
       {/* 头部导航 - 固定在顶部 */}
       <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between spacing-standard" style={{ backgroundColor: 'var(--background-page)' }}>
         <div className="flex items-center space-x-2">
@@ -485,5 +492,6 @@ export default function Diary() {
         />
       )}
     </div>
+    </>
   );
 } 

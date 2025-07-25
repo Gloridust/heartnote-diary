@@ -9,15 +9,26 @@ import SettingsModal from '../components/SettingsModal';
 import PWAInstallPrompt from '../components/PWAInstallPrompt';
 import PWAStatus from '../components/PWAStatus';
 import { getLocationAndWeather, type LocationWeatherData } from '../lib/location-weather';
+import { useConversationState } from '../hooks/useConversationState';
+import ConversationRestoreNotice from '../components/ConversationRestoreNotice';
 
 export default function Home() {
-  // 对话状态管理 - 主页面维护完整对话记录
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [diaryEntry, setDiaryEntry] = useState<DiaryEntry | null>(null);
+  // 对话状态管理 - 使用持久化Hook
+  const {
+    messages,
+    diaryEntry,
+    hasStartedConversation,
+    showDiaryPreview,
+    setMessages,
+    setDiaryEntry,
+    setHasStartedConversation,
+    setShowDiaryPreview,
+    clearConversationState
+  } = useConversationState();
+  
+  // 其他状态管理
   const [showDiary, setShowDiary] = useState(false);
   const [showVoiceInput, setShowVoiceInput] = useState(true);
-  const [hasStartedConversation, setHasStartedConversation] = useState(false);
-  const [showDiaryPreview, setShowDiaryPreview] = useState(false); // 新增：显示日记预览卡片
   
   // 加载状态管理
   const [isSpeechLoading, setIsSpeechLoading] = useState(false);
@@ -65,6 +76,17 @@ export default function Home() {
   console.log('🏠 Home组件渲染，当前消息数量:', messages.length);
   console.log('📋 当前消息列表:', messages);
   console.log('🎯 对话是否已开始:', hasStartedConversation);
+  
+  // 对话恢复状态
+  const [showRestoreNotice, setShowRestoreNotice] = useState(false);
+  
+  // 显示对话恢复提示
+  useEffect(() => {
+    if (messages.length > 0 && hasStartedConversation) {
+      console.log('💭 对话状态已从本地存储恢复');
+      setShowRestoreNotice(true);
+    }
+  }, [messages.length, hasStartedConversation]);
 
   // 添加新消息到对话记录
   const addNewMessages = (userText: string, aiText: string, mode?: string) => {
@@ -280,11 +302,8 @@ export default function Home() {
         alert(`✅ ${result.message || '日记保存成功！'}\n日记ID: ${result.diary_id}`);
         
         // 重置状态，准备下一次对话
-        setMessages([]);
-        setDiaryEntry(null);
-        setShowDiaryPreview(false);
+        clearConversationState(); // 使用持久化Hook的清除方法
         setShowDiary(false);
-        setHasStartedConversation(false);
       } else {
         throw new Error(result.message || '保存失败');
       }
@@ -338,6 +357,7 @@ export default function Home() {
       <Head>
         <title>信语日记 - AI驱动的对话式日记应用</title>
         <meta name="description" content="信语日记 - AI驱动的对话式日记应用，用语音记录生活点滴" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
       </Head>
       <div style={{ backgroundColor: 'var(--background-page)' }} className="min-h-screen pb-20">
       {/* 头部导航 - 固定在顶部 */}
@@ -360,6 +380,21 @@ export default function Home() {
               {locationWeatherData ? '🌤️' : isLoadingLocation ? '⏳' : '❌'}
             </span>
           </div>
+          {/* 重新开始对话按钮 */}
+          {messages.length > 0 && (
+            <button 
+              onClick={() => {
+                if (confirm('确定要重新开始对话吗？当前对话内容将被清除。')) {
+                  clearConversationState();
+                }
+              }}
+              className="w-10 h-10 rounded-full flex items-center justify-center" 
+              style={{ backgroundColor: 'var(--surface-accent)' }}
+              title="重新开始对话"
+            >
+              <span style={{ color: 'var(--text-secondary)' }}>🔄</span>
+            </button>
+          )}
           <Link href="/test-audio" className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--surface-accent)' }}>
             <span style={{ color: 'var(--text-secondary)' }}>🔧</span>
           </Link>
@@ -582,6 +617,12 @@ export default function Home() {
           setCurrentUserId(newUserId);
           console.log('👤 用户ID已更新:', newUserId);
         }}
+      />
+
+      {/* 对话恢复提示 */}
+      <ConversationRestoreNotice 
+        show={showRestoreNotice} 
+        messageCount={messages.length} 
       />
 
       {/* PWA安装提示 */}
