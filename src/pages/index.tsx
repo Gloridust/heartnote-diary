@@ -622,6 +622,10 @@ export default function Home() {
             <i>📖</i>
             <span>日记本</span>
           </Link>
+          <Link href="/profile" className="nav-item">
+            <i>👤</i>
+            <span>档案</span>
+          </Link>
         </div>
       </nav>
 
