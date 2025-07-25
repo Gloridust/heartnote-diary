@@ -6,9 +6,49 @@ export default function Document() {
       <Head>
         {/* 基础页面信息 */}
         <meta name="application-name" content="信语日记" />
+        <meta name="apple-mobile-web-app-title" content="信语日记" />
         
-        {/* PWA Manifest */}
+        {/* PWA配置 */}
         <link rel="manifest" href="/manifest.json" />
+        
+        {/* iOS WebApp配置 */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-touch-fullscreen" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        
+        {/* 视口和缩放配置 */}
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+        
+        {/* 主题颜色 */}
+        <meta name="theme-color" content="#8B7B6B" />
+        <meta name="msapplication-TileColor" content="#8B7B6B" />
+        <meta name="msapplication-navbutton-color" content="#8B7B6B" />
+        
+        {/* iOS状态栏颜色 */}
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        
+        {/* 图标配置 */}
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+        <link rel="icon" type="image/png" sizes="96x96" href="/favicon.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/favicon.png" />
+        <link rel="shortcut icon" href="/favicon.png" />
+        
+        {/* Apple Touch图标 */}
+        <link rel="apple-touch-icon" href="/favicon.png" />
+        <link rel="apple-touch-icon" sizes="72x72" href="/favicon.png" />
+        <link rel="apple-touch-icon" sizes="96x96" href="/favicon.png" />
+        <link rel="apple-touch-icon" sizes="128x128" href="/favicon.png" />
+        <link rel="apple-touch-icon" sizes="144x144" href="/favicon.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/favicon.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/favicon.png" />
+        <link rel="apple-touch-icon" sizes="192x192" href="/favicon.png" />
+        <link rel="apple-touch-icon" sizes="512x512" href="/favicon.png" />
+        
+        {/* Microsoft配置 */}
+        <meta name="msapplication-TileImage" content="/favicon.png" />
+        <meta name="msapplication-config" content="/browserconfig.xml" />
         
 
         <link rel="apple-touch-startup-image" media="screen and (device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)" href="splash_screens/iPhone_16_Pro_Max_landscape.png"/>

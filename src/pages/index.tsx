@@ -6,6 +6,8 @@ import { saveDiary, formatDateForApi, UserStorage, type DiaryApiRequest } from '
 import VoiceInput from '../components/VoiceInput';
 import LoadingAnimation from '../components/LoadingAnimation';
 import SettingsModal from '../components/SettingsModal';
+import PWAInstallPrompt from '../components/PWAInstallPrompt';
+import PWAStatus from '../components/PWAStatus';
 
 export default function Home() {
   // 对话状态管理 - 主页面维护完整对话记录
@@ -530,7 +532,7 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* 设置弹窗 */}
+            {/* 设置弹窗 */}
       <SettingsModal
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
@@ -539,7 +541,13 @@ export default function Home() {
           console.log('👤 用户ID已更新:', newUserId);
         }}
       />
-    </div>
+
+      {/* PWA安装提示 */}
+      <PWAInstallPrompt />
+
+      {/* PWA状态显示 */}
+      <PWAStatus />
+      </div>
     </>
   );
 }

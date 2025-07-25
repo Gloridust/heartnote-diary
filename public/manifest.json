@@ -1,24 +1,104 @@
 {
-  "name": "信语日记",
+  "name": "信语日记 - AI对话式日记应用",
   "short_name": "信语日记",
-  "description": "AI驱动的对话式日记应用，用语音记录生活点滴",
-  "start_url": "/",
+  "description": "AI驱动的对话式日记应用，用语音记录生活点滴，智能生成日记内容",
+  "start_url": "/?utm_source=pwa",
   "display": "standalone",
   "background_color": "#F7F7EC",
-  "theme_color": "#F7F7EC",
-  "orientation": "portrait",
+  "theme_color": "#8B7B6B",
+  "orientation": "portrait-primary",
   "scope": "/",
   "lang": "zh-CN",
+  "categories": ["lifestyle", "productivity", "utilities"],
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "写日记",
+      "short_name": "写日记",
+      "description": "开始语音记录今天的生活",
+      "url": "/?action=record",
+      "icons": [
+        {
+          "src": "/favicon.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "查看日记",
+      "short_name": "日记本",
+      "description": "浏览过往的日记记录",
+      "url": "/diary?action=view",
+      "icons": [
+        {
+          "src": "/favicon.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
   "icons": [
     {
       "src": "/favicon.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/favicon.png", 
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/favicon.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "720x540",
+      "type": "image/png", 
+      "form_factor": "wide"
     }
   ]
 } 

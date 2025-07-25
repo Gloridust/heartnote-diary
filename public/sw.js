@@ -1,13 +1,30 @@
 // 信语日记 PWA Service Worker
-const CACHE_NAME = 'heartnote-diary-v2';
+const CACHE_NAME = 'heartnote-diary-v3';
+const STATIC_CACHE = 'static-v3';
+const RUNTIME_CACHE = 'runtime-v3';
+
+// 静态资源缓存列表
 const urlsToCache = [
   '/',
   '/diary',
   '/test-audio',
   '/manifest.json',
+  '/browserconfig.xml',
   '/favicon.png',
   '/favicon.ico'
 ];
+
+// 运行时缓存策略
+const runtimeCacheStrategies = {
+  // 图片资源 - 缓存优先
+  images: /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
+  // 字体资源 - 缓存优先
+  fonts: /\.(?:woff|woff2|ttf|eot)$/,
+  // CSS/JS - 网络优先，缓存备用
+  static: /\.(?:js|css)$/,
+  // API请求 - 网络优先
+  api: /\/api\//
+};
 
 // 安装事件
 self.addEventListener('install', function(event) {
@@ -42,46 +59,83 @@ self.addEventListener('activate', function(event) {
   self.clients.claim();
 });
 
-// 请求拦截
+// 请求拦截 - 智能缓存策略
 self.addEventListener('fetch', function(event) {
   // 只处理 GET 请求
   if (event.request.method !== 'GET') {
     return;
   }
 
-  // 跳过 API 请求和外部资源
-  if (event.request.url.includes('/api/') || 
-      event.request.url.includes('http') && !event.request.url.includes(self.location.origin)) {
+  const url = new URL(event.request.url);
+  
+  // 跳过外部资源（除了字体和CDN资源）
+  if (url.origin !== self.location.origin && 
+      !runtimeCacheStrategies.fonts.test(url.pathname) &&
+      !url.hostname.includes('fonts.googleapis.com') &&
+      !url.hostname.includes('fonts.gstatic.com')) {
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request)
-      .then(function(response) {
-        // 如果缓存中有，直接返回
-        if (response) {
-          return response;
-        }
+  // API请求 - 网络优先策略
+  if (runtimeCacheStrategies.api.test(url.pathname)) {
+    event.respondWith(networkFirst(event.request, RUNTIME_CACHE));
+    return;
+  }
 
-        // 否则请求网络
-        return fetch(event.request).then(function(response) {
-          // 检查是否收到有效响应
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
+  // 图片和字体 - 缓存优先策略
+  if (runtimeCacheStrategies.images.test(url.pathname) || 
+      runtimeCacheStrategies.fonts.test(url.pathname)) {
+    event.respondWith(cacheFirst(event.request, RUNTIME_CACHE));
+    return;
+  }
 
-          // 克隆响应进行缓存
-          var responseToCache = response.clone();
-          caches.open(CACHE_NAME)
-            .then(function(cache) {
-              cache.put(event.request, responseToCache);
-            });
+  // CSS/JS - 网络优先，缓存备用
+  if (runtimeCacheStrategies.static.test(url.pathname)) {
+    event.respondWith(networkFirst(event.request, RUNTIME_CACHE));
+    return;
+  }
 
-          return response;
-        });
-      })
-  );
+  // 页面请求 - 网络优先，离线时显示缓存
+  event.respondWith(networkFirst(event.request, STATIC_CACHE));
 });
+
+// 缓存优先策略
+function cacheFirst(request, cacheName) {
+  return caches.open(cacheName).then(function(cache) {
+    return cache.match(request).then(function(response) {
+      if (response) {
+        return response;
+      }
+      
+      return fetch(request).then(function(networkResponse) {
+        if (networkResponse && networkResponse.status === 200) {
+          cache.put(request, networkResponse.clone());
+        }
+        return networkResponse;
+      }).catch(function() {
+        // 网络失败时返回离线页面或默认资源
+        return cache.match('/');
+      });
+    });
+  });
+}
+
+// 网络优先策略
+function networkFirst(request, cacheName) {
+  return fetch(request).then(function(response) {
+    if (response && response.status === 200) {
+      const responseClone = response.clone();
+      caches.open(cacheName).then(function(cache) {
+        cache.put(request, responseClone);
+      });
+    }
+    return response;
+  }).catch(function() {
+    return caches.open(cacheName).then(function(cache) {
+      return cache.match(request);
+    });
+  });
+}
 
 // PWA 安装提示
 self.addEventListener('beforeinstallprompt', function(event) {
