@@ -8,6 +8,7 @@ import LoadingAnimation from '../components/LoadingAnimation';
 import SettingsModal from '../components/SettingsModal';
 import PWAInstallPrompt from '../components/PWAInstallPrompt';
 import PWAStatus from '../components/PWAStatus';
+import { getLocationAndWeather, type LocationWeatherData } from '../lib/location-weather';
 
 export default function Home() {
   // 对话状态管理 - 主页面维护完整对话记录
@@ -29,12 +30,35 @@ export default function Home() {
   
   // 保存状态
   const [isSaving, setIsSaving] = useState(false);
+  
+  // 位置和天气状态
+  const [locationWeatherData, setLocationWeatherData] = useState<LocationWeatherData | null>(null);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
   // 初始化用户ID
   useEffect(() => {
     const userId = UserStorage.getOrCreateUserId();
     setCurrentUserId(userId);
     console.log('👤 当前用户ID:', userId);
+  }, []);
+
+  // 初始化位置和天气信息
+  useEffect(() => {
+    if (!locationWeatherData && !isLoadingLocation) {
+      console.log('🌍 首页启动时获取位置和天气信息...');
+      setIsLoadingLocation(true);
+      getLocationAndWeather()
+        .then((data) => {
+          console.log('✅ 位置和天气信息获取成功:', data);
+          setLocationWeatherData(data);
+        })
+        .catch((error) => {
+          console.warn('⚠️ 位置和天气信息获取失败:', error);
+        })
+        .finally(() => {
+          setIsLoadingLocation(false);
+        });
+    }
   }, []);
 
   // 组件渲染时的调试信息
@@ -325,6 +349,17 @@ export default function Home() {
           <h1 className="text-title" style={{ color: 'var(--text-primary)' }}>信语日记</h1>
         </div>
         <div className="flex items-center space-x-2">
+          {/* 位置天气状态指示器 */}
+          <div className="w-10 h-10 rounded-full flex items-center justify-center" 
+               style={{ backgroundColor: 'var(--surface-accent)' }}
+               title={locationWeatherData ? 
+                 `${locationWeatherData.weather.temperature}℃ ${locationWeatherData.weather.description}` : 
+                 isLoadingLocation ? '获取中...' : '位置天气未获取'
+               }>
+            <span style={{ color: 'var(--text-secondary)' }}>
+              {locationWeatherData ? '🌤️' : isLoadingLocation ? '⏳' : '❌'}
+            </span>
+          </div>
           <Link href="/test-audio" className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--surface-accent)' }}>
             <span style={{ color: 'var(--text-secondary)' }}>🔧</span>
           </Link>
@@ -352,6 +387,7 @@ export default function Home() {
           showDiaryPreview={showDiaryPreview}
           onShowLoadingStates={handleLoadingStates}
           onClearDiaryPreview={handleClearDiaryPreview}
+          locationWeatherData={locationWeatherData}
         />
       )}
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { getLocationAndWeather, formatWeatherForPrompt, formatLocationForPrompt, type LocationWeatherData } from '../lib/location-weather';
+import { formatWeatherForPrompt, formatLocationForPrompt, type LocationWeatherData } from '../lib/location-weather';
 
 interface DiaryData {
   mode: string;
@@ -18,9 +18,10 @@ interface VoiceInputProps {
   className?: string;
   onShowLoadingStates?: (speechLoading: boolean, chatLoading: boolean, userText?: string) => void;
   onClearDiaryPreview?: () => void; // 新增：清除日记预览状态
+  locationWeatherData?: LocationWeatherData | null; // 新增：位置天气数据
 }
 
-export default function VoiceInput({ onNewMessages, onInitConversation, onSessionEnd, onGenerateDiary, hasMessages = false, showDiaryPreview = false, className = '', onShowLoadingStates, onClearDiaryPreview }: VoiceInputProps) {
+export default function VoiceInput({ onNewMessages, onInitConversation, onSessionEnd, onGenerateDiary, hasMessages = false, showDiaryPreview = false, className = '', onShowLoadingStates, onClearDiaryPreview, locationWeatherData }: VoiceInputProps) {
   // 录音状态
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -34,9 +35,7 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
   const audioChunksRef = useRef<Blob[]>([]);
   const chatHistoryRef = useRef<Array<{role: 'user' | 'assistant', content: string}>>([]);
   
-  // 位置和天气状态
-  const [locationWeatherData, setLocationWeatherData] = useState<LocationWeatherData | null>(null);
-  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  // 移除本地位置天气状态，改为通过props接收
 
   // 录音计时器
   useEffect(() => {
@@ -71,22 +70,7 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
         onInitConversation();
       }
       
-      // 如果还没有位置和天气信息，尝试获取
-      if (!locationWeatherData && !isLoadingLocation) {
-        console.log('🌍 开始获取位置和天气信息...');
-        setIsLoadingLocation(true);
-        getLocationAndWeather()
-          .then((data) => {
-            console.log('✅ 位置和天气信息获取成功:', data);
-            setLocationWeatherData(data);
-          })
-          .catch((error) => {
-            console.warn('⚠️ 位置和天气信息获取失败，将不影响正常录音:', error);
-          })
-          .finally(() => {
-            setIsLoadingLocation(false);
-          });
-      }
+      // 位置天气数据现在通过props传入，无需在此获取
       
       // === 移动端Safari和Chrome兼容性检查 ===
       
