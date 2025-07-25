@@ -48,9 +48,9 @@ export default function Diary() {
           .sort((a, b) => b.date.localeCompare(a.date));
         setDiaryEntries(convertedEntries);
         
-        // 提取有日记的日期列表，并排序
-        const dates = response.data
-          .map(entry => extractDateFromApiString(entry.date))
+        // 提取有日记的日期列表，去重并排序
+        const dates = [...new Set(response.data
+          .map(entry => extractDateFromApiString(entry.date)))]
           .sort((a, b) => b.localeCompare(a)); // 最新的在前
         setDatesWithDiary(dates);
         
@@ -184,42 +184,42 @@ export default function Diary() {
     return Math.round(average * 10) / 10; // 保留一位小数
   };
 
-  // 根据心情评分获取对应的颜色
+  // 根据心情评分获取对应的颜色 - 使用蓝色系，减小跨度
   const getMoodColor = (score: number): { bg: string; bgHover: string; text: string } => {
     if (score >= 8) {
-      // 😊 非常开心 - 绿色系
+      // 😊 非常开心 - 深蓝色
       return {
-        bg: '#10B981', // emerald-500
-        bgHover: '#059669', // emerald-600
+        bg: '#1E40AF', // blue-800
+        bgHover: '#1E3A8A', // blue-900
         text: '#FFFFFF'
       };
     } else if (score >= 6) {
-      // 🙂 愉快 - 蓝色系
+      // 🙂 愉快 - 蓝色
       return {
         bg: '#3B82F6', // blue-500
         bgHover: '#2563EB', // blue-600
         text: '#FFFFFF'
       };
     } else if (score >= 4) {
-      // 😐 平静 - 黄色系
+      // 😐 平静 - 浅蓝色
       return {
-        bg: '#F59E0B', // amber-500
-        bgHover: '#D97706', // amber-600
+        bg: '#60A5FA', // blue-400
+        bgHover: '#3B82F6', // blue-500
         text: '#FFFFFF'
       };
     } else if (score >= 2) {
-      // 😔 低落 - 橙色系
+      // 😔 低落 - 更浅蓝色
       return {
-        bg: '#EF4444', // red-500
-        bgHover: '#DC2626', // red-600
-        text: '#FFFFFF'
+        bg: '#93C5FD', // blue-300
+        bgHover: '#60A5FA', // blue-400
+        text: '#1F2937' // 深色文字以保证对比度
       };
     } else {
-      // 😢 很难过 - 深红色系
+      // 😢 很难过 - 很浅蓝色
       return {
-        bg: '#991B1B', // red-800
-        bgHover: '#7F1D1D', // red-900
-        text: '#FFFFFF'
+        bg: '#DBEAFE', // blue-100
+        bgHover: '#93C5FD', // blue-300
+        text: '#1F2937' // 深色文字以保证对比度
       };
     }
   };
