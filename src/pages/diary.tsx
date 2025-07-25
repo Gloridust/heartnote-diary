@@ -184,42 +184,42 @@ export default function Diary() {
     return Math.round(average * 10) / 10; // 保留一位小数
   };
 
-  // 根据心情评分获取对应的颜色 - 使用蓝色系，减小跨度
+  // 根据心情评分获取对应的颜色 - 新的配色方案
   const getMoodColor = (score: number): { bg: string; bgHover: string; text: string } => {
     if (score >= 8) {
-      // 😊 非常开心 - 深蓝色
+      // 😊 非常开心 - 亮蓝色
       return {
-        bg: '#1E40AF', // blue-800
-        bgHover: '#1E3A8A', // blue-900
+        bg: '#3B82F6', // 亮蓝色
+        bgHover: '#2563EB', // 深一点的蓝色
         text: '#FFFFFF'
       };
     } else if (score >= 6) {
-      // 🙂 愉快 - 蓝色
+      // 🙂 愉快 - 天蓝色
       return {
-        bg: '#3B82F6', // blue-500
-        bgHover: '#2563EB', // blue-600
+        bg: '#60A5FA', // 天蓝色
+        bgHover: '#3B82F6', // 亮蓝色
         text: '#FFFFFF'
       };
     } else if (score >= 4) {
-      // 😐 平静 - 浅蓝色
+      // 😐 平静 - 浅灰蓝
       return {
-        bg: '#60A5FA', // blue-400
-        bgHover: '#3B82F6', // blue-500
-        text: '#FFFFFF'
+        bg: '#93C5FD', // 浅灰蓝
+        bgHover: '#60A5FA', // 天蓝色
+        text: '#1F2937' // 深色文字以保证对比度
       };
     } else if (score >= 2) {
-      // 😔 低落 - 更浅蓝色
+      // 😔 低落 - 暗灰蓝
       return {
-        bg: '#93C5FD', // blue-300
-        bgHover: '#60A5FA', // blue-400
-        text: '#1F2937' // 深色文字以保证对比度
+        bg: '#64748B', // 暗灰蓝
+        bgHover: '#475569', // 更深的灰蓝
+        text: '#FFFFFF'
       };
     } else {
-      // 😢 很难过 - 很浅蓝色
+      // 😢 难过 - 深蓝灰
       return {
-        bg: '#DBEAFE', // blue-100
-        bgHover: '#93C5FD', // blue-300
-        text: '#1F2937' // 深色文字以保证对比度
+        bg: '#334155', // 深蓝灰
+        bgHover: '#1E293B', // 最深的蓝灰
+        text: '#FFFFFF'
       };
     }
   };
@@ -461,35 +461,35 @@ export default function Diary() {
                     className="w-3 h-3 rounded-full" 
                     style={{ backgroundColor: getMoodColor(9).bg }}
                   ></div>
-                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>开心</span>
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>😊 非常开心 8-10分</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <div 
                     className="w-3 h-3 rounded-full" 
                     style={{ backgroundColor: getMoodColor(7).bg }}
                   ></div>
-                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>愉快</span>
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>🙂 愉快 6-7分</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <div 
                     className="w-3 h-3 rounded-full" 
                     style={{ backgroundColor: getMoodColor(5).bg }}
                   ></div>
-                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>平静</span>
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>😐 平静 4-5分</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <div 
                     className="w-3 h-3 rounded-full" 
                     style={{ backgroundColor: getMoodColor(3).bg }}
                   ></div>
-                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>低落</span>
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>😔 低落 2-3分</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <div 
                     className="w-3 h-3 rounded-full" 
                     style={{ backgroundColor: getMoodColor(1).bg }}
                   ></div>
-                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>难过</span>
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>😢 难过 0-1分</span>
                 </div>
               </div>
             </div>
