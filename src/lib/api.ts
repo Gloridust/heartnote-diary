@@ -281,4 +281,42 @@ export const UserStorage = {
     }
     return userId;
   }
-}; 
+};
+
+// 删除日记
+export async function deleteDiary(diaryId: number, userId: number): Promise<DiaryApiResponse> {
+  try {
+    console.log('🗑️ 删除日记请求:', { diaryId, userId });
+    
+    const response = await fetch(`${API_BASE_URL}/diary?diary_id=${diaryId}&user_id=${userId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.message || '删除日记失败');
+    }
+
+    console.log('✅ 删除日记成功:', result);
+    return result;
+    
+  } catch (error) {
+    console.error('❌ 删除日记失败:', error);
+    
+    if (error instanceof Error) {
+      return {
+        status: 'error',
+        message: error.message
+      };
+    }
+    
+    return {
+      status: 'error',
+      message: '删除日记失败'
+    };
+  }
+} 

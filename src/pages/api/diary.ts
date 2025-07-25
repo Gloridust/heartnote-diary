@@ -37,8 +37,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } else if (method === 'GET') {
       // 获取用户日记
       return await handleGetUserDiaries(req, res);
+    } else if (method === 'DELETE') {
+      // 删除日记
+      return await handleDeleteDiary(req, res);
     } else {
-      res.setHeader('Allow', ['GET', 'POST']);
+      res.setHeader('Allow', ['GET', 'POST', 'DELETE']);
       return res.status(405).json({ 
         status: 'error', 
         message: `Method ${method} Not Allowed` 
@@ -226,6 +229,67 @@ async function handleGetUserDiaries(req: NextApiRequest, res: NextApiResponse) {
     return res.status(500).json({
       status: 'error',
       message: '获取日记失败'
+    });
+  }
+}
+
+// 处理删除日记请求
+async function handleDeleteDiary(req: NextApiRequest, res: NextApiResponse) {
+  const { diary_id, user_id } = req.query;
+
+  console.log('🗑️ 删除日记请求:', { diary_id, user_id });
+
+  // 验证参数
+  if (!diary_id || !user_id) {
+    return res.status(400).json({
+      status: 'error',
+      message: '缺少必要参数：diary_id 和 user_id'
+    });
+  }
+
+  try {
+    // 首先验证日记是否属于该用户
+    const { data: existingDiary, error: fetchError } = await supabase
+      .from('diaries')
+      .select('id, user_id')
+      .eq('id', diary_id)
+      .eq('user_id', user_id)
+      .single();
+
+    if (fetchError || !existingDiary) {
+      console.error('❌ 日记不存在或不属于该用户:', fetchError);
+      return res.status(404).json({
+        status: 'error',
+        message: '日记不存在或无权限删除'
+      });
+    }
+
+    // 执行删除
+    const { error: deleteError } = await supabase
+      .from('diaries')
+      .delete()
+      .eq('id', diary_id)
+      .eq('user_id', user_id);
+
+    if (deleteError) {
+      console.error('❌ 删除日记失败:', deleteError);
+      throw deleteError;
+    }
+
+    console.log('✅ 日记删除成功:', diary_id);
+
+    return res.status(200).json({
+      status: 'success',
+      message: '日记删除成功',
+      diary_id: parseInt(diary_id as string)
+    });
+
+  } catch (error) {
+    console.error('❌ 删除日记失败:', error);
+    
+    return res.status(500).json({
+      status: 'error',
+      message: '删除日记失败'
     });
   }
 } 

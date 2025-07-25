@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { DiaryEntry } from '../lib/data';
-import { saveDiary, formatDateForApi, createDateFromDateAndTime, type DiaryApiRequest } from '../lib/api';
+import { saveDiary, deleteDiary, formatDateForApi, createDateFromDateAndTime, type DiaryApiRequest } from '../lib/api';
 
 interface DiaryDetailModalProps {
   isOpen: boolean;
@@ -137,22 +137,33 @@ export default function DiaryDetailModal({
 
     try {
       console.log('🗑️ 删除日记:', diary.id);
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      setMessage({ type: 'success', text: '日记删除成功！' });
+      const result = await deleteDiary(diary.id, userId);
       
-      if (onDiaryDeleted) {
-        onDiaryDeleted();
+      if (result.status === 'success') {
+        setMessage({ type: 'success', text: '日记删除成功！' });
+        
+        if (onDiaryDeleted) {
+          onDiaryDeleted();
+        }
+        
+        setTimeout(() => {
+          onClose();
+          setMessage(null);
+        }, 1000);
+      } else {
+        throw new Error(result.message || '删除失败');
       }
-      
-      setTimeout(() => {
-        onClose();
-        setMessage(null);
-      }, 1000);
       
     } catch (error) {
       console.error('❌ 删除日记失败:', error);
-      setMessage({ type: 'error', text: '删除失败，请重试' });
+      let errorMessage = '删除失败，请重试';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      setMessage({ type: 'error', text: errorMessage });
     } finally {
       setIsDeleting(false);
     }
