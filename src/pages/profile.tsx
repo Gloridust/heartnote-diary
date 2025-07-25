@@ -343,12 +343,6 @@ export default function Profile() {
                   <div className="chart-wrapper">
                     <MoodChart data={moodTrend} width={320} height={140} />
                   </div>
-                  <div className="chart-legend">
-                    <div className="legend-item">
-                      <div className="legend-dot" style={{ backgroundColor: 'var(--primary-base)' }}></div>
-                      <span>心情评分</span>
-                    </div>
-                  </div>
                 </div>
               )}
 
@@ -598,29 +592,8 @@ export default function Profile() {
           }
 
           .chart-wrapper {
-            padding: 0.5rem;
+            padding: 0;
             background: transparent;
-          }
-
-          .chart-legend {
-            padding: 1rem;
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-          }
-
-          .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-          }
-
-          .legend-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
           }
 
           .detail-cards {
