@@ -21,7 +21,7 @@ export function usePWAStatus() {
 
     const checkPWAStatus = () => {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                          !!(window.navigator as any).standalone ||
+                          !!(window.navigator as Navigator & { standalone?: boolean }).standalone ||
                           document.referrer.includes('android-app://');
       setIsPWA(isStandalone);
     };
