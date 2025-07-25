@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { DiaryEntry } from '../lib/data';
-import { saveDiary, formatDateForApi, type DiaryApiRequest } from '../lib/api';
+import { saveDiary, formatDateForApi, createDateFromDateAndTime, type DiaryApiRequest } from '../lib/api';
 
 interface DiaryDetailModalProps {
   isOpen: boolean;
@@ -86,7 +86,7 @@ export default function DiaryDetailModal({
         diary_id: editedDiary.id,
         title: editedDiary.title,
         content: editedDiary.content,
-        date: formatDateForApi(new Date(editedDiary.date + ' ' + editedDiary.time)),
+        date: formatDateForApi(createDateFromDateAndTime(editedDiary.date, editedDiary.time)),
         score: editedDiary.score,
         tag: editedDiary.tag
       };

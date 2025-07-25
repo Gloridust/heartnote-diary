@@ -110,16 +110,21 @@ export async function getUserDiaries(userId: number): Promise<DiaryListResponse>
   }
 }
 
-// 格式化日期为API要求的格式
+// 格式化日期为API要求的格式（使用ISO字符串保持时区信息）
 export function formatDateForApi(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
+  return date.toISOString();
+}
+
+// 从日期字符串和时间字符串创建本地Date对象
+export function createDateFromDateAndTime(dateStr: string, timeStr: string): Date {
+  // dateStr格式: "2025-01-25"
+  // timeStr格式: "14:30"
   
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  
+  // 创建本地时间的Date对象（不会有时区转换问题）
+  return new Date(year, month - 1, day, hours, minutes, 0);
 }
 
 // 从API日期字符串解析为Date对象
@@ -135,30 +140,54 @@ export function formatDateForCalendar(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-// 从API日期字符串提取日期部分 (YYYY-MM-DD)
+// 从API日期字符串提取日期部分 (YYYY-MM-DD) - 使用本地时区
 export function extractDateFromApiString(apiDateString: string): string {
-  // 处理两种格式：ISO格式 '2025-07-25T00:15:39+00:00' 和旧格式 '2025-07-25 23:49:23'
-  if (apiDateString.includes('T')) {
-    // ISO格式：取T前面的日期部分
-    return apiDateString.split('T')[0];
-  } else {
-    // 旧格式：取空格前的日期部分
-    return apiDateString.split(' ')[0];
+  try {
+    // 处理两种格式：ISO格式 '2025-07-25T00:15:39+00:00' 和旧格式 '2025-07-25 23:49:23'
+    if (apiDateString.includes('T')) {
+      // ISO格式：解析为Date对象，然后获取本地日期
+      const date = new Date(apiDateString);
+      
+      // 确保日期有效
+      if (isNaN(date.getTime())) {
+        console.error('无效的日期字符串:', apiDateString);
+        return apiDateString.split('T')[0]; // fallback
+      }
+      
+      // 使用本地时区格式化日期
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } else {
+      // 旧格式：取空格前的日期部分
+      return apiDateString.split(' ')[0];
+    }
+  } catch (error) {
+    console.error('解析日期失败:', apiDateString, error);
+    // fallback: 尝试提取T前面的部分
+    return apiDateString.includes('T') ? apiDateString.split('T')[0] : apiDateString.split(' ')[0];
   }
 }
 
-// 从API日期字符串提取时间部分 (HH:MM)
+// 从API日期字符串提取时间部分 (HH:MM) - 使用本地时区显示
 export function extractTimeFromApiString(apiDateString: string): string {
   try {
     // 处理两种格式：ISO格式和旧格式
     if (apiDateString.includes('T')) {
-      // ISO格式：解析为Date对象，然后格式化时间
+      // ISO格式：解析为Date对象，然后格式化为本地时间
       const date = new Date(apiDateString);
-      return date.toLocaleTimeString('zh-CN', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: false 
-      });
+      
+      // 确保日期有效
+      if (isNaN(date.getTime())) {
+        console.error('无效的日期字符串:', apiDateString);
+        return '00:00';
+      }
+      
+      // 使用本地时区格式化时间
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${hours}:${minutes}`;
     } else {
       // 旧格式：取空格后的时间部分
       const timePart = apiDateString.split(' ')[1];
