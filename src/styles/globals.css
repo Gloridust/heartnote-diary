@@ -231,14 +231,14 @@ body {
   color: rgba(107, 114, 128, 1);
 }
 
-/* 聊天气泡样式 - 严格按照设计稿 */
+/* 聊天气泡样式 - 优化字体显示 */
 .chat-bubble-ai {
   background-color: var(--surface-accent);
   align-self: flex-start;
   max-width: 80%;
-  margin-bottom: 12px;
-  padding: 12px 16px;
-  border-radius: 16px 16px 16px 4px;
+  margin-bottom: 16px; /* 增加气泡间距 */
+  padding: 14px 18px; /* 增大内边距以适应更大字体 */
+  border-radius: 18px 18px 18px 4px; /* 略微增大圆角 */
   color: var(--text-primary);
 }
 
@@ -246,10 +246,10 @@ body {
   background-color: var(--primary-base);
   align-self: flex-end;
   max-width: 80%;
-  margin-bottom: 12px;
-  padding: 12px 16px;
+  margin-bottom: 16px; /* 增加气泡间距 */
+  padding: 14px 18px; /* 增大内边距以适应更大字体 */
   color: var(--text-inverse);
-  border-radius: 16px 16px 4px 16px;
+  border-radius: 18px 18px 4px 18px; /* 略微增大圆角 */
 }
 
 /* 深色模式下的聊天气泡适配 */
@@ -267,8 +267,8 @@ body {
 
 .chat-bubble-ai p,
 .chat-bubble-user p {
-  font-size: var(--font-size-body);
-  line-height: 1.33333;
+  font-size: 16px; /* 从12px增大到16px，提高可读性 */
+  line-height: 1.5; /* 调整行高以匹配更大的字体 */
   margin: 0;
 }
 
@@ -448,8 +448,8 @@ body {
 }
 
 .diary-preview-content {
-  font-size: var(--font-size-body);
-  line-height: 1.33333;
+  font-size: 15px; /* 从12px增大到15px，提高日记内容可读性 */
+  line-height: 1.5; /* 增加行高使内容更舒适 */
   color: var(--text-secondary);
   margin: 0;
   overflow: hidden;

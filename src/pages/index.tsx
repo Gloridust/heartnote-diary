@@ -498,7 +498,12 @@ export default function Home() {
               <div className="text-center space-y-4">
                 <div className="text-6xl mb-4">🎤</div>
                 <h2 className="text-title" style={{ color: 'var(--text-primary)' }}>开始语音对话</h2>
-                <p className="text-body" style={{ color: 'var(--text-secondary)', maxWidth: '300px' }}>
+                <p style={{ 
+                  color: 'var(--text-secondary)', 
+                  maxWidth: '300px',
+                  fontSize: '16px', 
+                  lineHeight: '1.5' 
+                }}>
                   点击下方的麦克风按钮，与AI助手开始对话，分享您今天的经历和感受
                 </p>
               </div>

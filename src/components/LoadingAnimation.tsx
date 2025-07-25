@@ -37,7 +37,12 @@ export default function LoadingAnimation({ message = "正在思考...", isUser =
         
         {/* 可选的文字提示 */}
         {message && (
-          <span className="text-xs opacity-60 ml-2">
+          <span style={{ 
+            fontSize: '14px', 
+            opacity: 0.7, 
+            marginLeft: '8px',
+            color: isUser ? 'rgba(255, 255, 255, 0.8)' : 'var(--text-secondary)'
+          }}>
             {message}
           </span>
         )}
