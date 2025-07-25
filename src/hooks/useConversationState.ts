@@ -2,11 +2,18 @@ import { useState, useEffect, useCallback } from 'react';
 import { Message, DiaryEntry } from '../lib/data';
 import { useIsClient } from './useClientOnly';
 
+// AI聊天消息格式
+export interface AIChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 interface ConversationState {
   messages: Message[];
   diaryEntry: DiaryEntry | null;
   hasStartedConversation: boolean;
   showDiaryPreview: boolean;
+  aiChatHistory: AIChatMessage[]; // 新增：AI对话历史
   timestamp: string;
 }
 
@@ -20,6 +27,7 @@ export function useConversationState() {
   const [diaryEntry, setDiaryEntry] = useState<DiaryEntry | null>(null);
   const [hasStartedConversation, setHasStartedConversation] = useState(false);
   const [showDiaryPreview, setShowDiaryPreview] = useState(false);
+  const [aiChatHistory, setAiChatHistory] = useState<AIChatMessage[]>([]);
 
   // 从localStorage加载对话状态
   const loadConversationState = useCallback(() => {
@@ -45,6 +53,7 @@ export function useConversationState() {
       setDiaryEntry(parsedState.diaryEntry || null);
       setHasStartedConversation(parsedState.hasStartedConversation || false);
       setShowDiaryPreview(parsedState.showDiaryPreview || false);
+      setAiChatHistory(parsedState.aiChatHistory || []);
       
     } catch (error) {
       console.error('❌ 加载对话状态失败:', error);
@@ -62,6 +71,7 @@ export function useConversationState() {
         diaryEntry,
         hasStartedConversation,
         showDiaryPreview,
+        aiChatHistory,
         timestamp: new Date().toISOString()
       };
 
@@ -82,6 +92,7 @@ export function useConversationState() {
       setDiaryEntry(null);
       setHasStartedConversation(false);
       setShowDiaryPreview(false);
+      setAiChatHistory([]);
       console.log('🗑️ 对话状态已清除');
     } catch (error) {
       console.error('❌ 清除对话状态失败:', error);
@@ -95,10 +106,10 @@ export function useConversationState() {
 
   // 状态变化时自动保存
   useEffect(() => {
-    if (isClient && (messages.length > 0 || diaryEntry || hasStartedConversation)) {
+    if (isClient && (messages.length > 0 || diaryEntry || hasStartedConversation || aiChatHistory.length > 0)) {
       saveConversationState();
     }
-  }, [isClient, messages, diaryEntry, hasStartedConversation, showDiaryPreview, saveConversationState]);
+  }, [isClient, messages, diaryEntry, hasStartedConversation, showDiaryPreview, aiChatHistory, saveConversationState]);
 
   // 页面卸载前保存状态
   useEffect(() => {
@@ -129,12 +140,14 @@ export function useConversationState() {
     diaryEntry,
     hasStartedConversation,
     showDiaryPreview,
+    aiChatHistory,
     
     // 状态更新函数
     setMessages,
     setDiaryEntry,
     setHasStartedConversation,
     setShowDiaryPreview,
+    setAiChatHistory,
     
     // 持久化操作
     saveConversationState,

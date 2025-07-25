@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { formatWeatherForPrompt, formatLocationForPrompt, type LocationWeatherData } from '../lib/location-weather';
+import { type AIChatMessage } from '../hooks/useConversationState';
 
 interface DiaryData {
   mode: string;
@@ -19,9 +20,11 @@ interface VoiceInputProps {
   onShowLoadingStates?: (speechLoading: boolean, chatLoading: boolean, userText?: string) => void;
   onClearDiaryPreview?: () => void; // 新增：清除日记预览状态
   locationWeatherData?: LocationWeatherData | null; // 新增：位置天气数据
+  aiChatHistory?: AIChatMessage[]; // 新增：AI对话历史
+  onUpdateAiChatHistory?: (history: AIChatMessage[]) => void; // 新增：更新AI对话历史
 }
 
-export default function VoiceInput({ onNewMessages, onInitConversation, onSessionEnd, onGenerateDiary, hasMessages = false, showDiaryPreview = false, className = '', onShowLoadingStates, onClearDiaryPreview, locationWeatherData }: VoiceInputProps) {
+export default function VoiceInput({ onNewMessages, onInitConversation, onSessionEnd, onGenerateDiary, hasMessages = false, showDiaryPreview = false, className = '', onShowLoadingStates, onClearDiaryPreview, locationWeatherData, aiChatHistory = [], onUpdateAiChatHistory }: VoiceInputProps) {
   // 录音状态
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -33,7 +36,7 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
   // 录音相关refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const chatHistoryRef = useRef<Array<{role: 'user' | 'assistant', content: string}>>([]);
+  // 移除本地chatHistoryRef，改为使用传入的aiChatHistory
   
   // 移除本地位置天气状态，改为通过props接收
 
@@ -312,6 +315,9 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
       return;
     }
 
+    // 声明对话历史变量，用于整个函数
+    let updatedHistory: AIChatMessage[] = [];
+
     try {
       // === 阶段1: 语音转文字加载状态 ===
       onShowLoadingStates?.(true, false);
@@ -357,11 +363,13 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
       onShowLoadingStates?.(false, true, userText);
 
       // 4. 调用LLM获取回复
-      chatHistoryRef.current.push({
+      const newUserMessage: AIChatMessage = {
         role: 'user',
         content: userText
-      });
-      console.log('📚 当前对话历史:', chatHistoryRef.current);
+      };
+      updatedHistory = [...aiChatHistory, newUserMessage];
+      onUpdateAiChatHistory?.(updatedHistory); // 立即保存用户消息
+      console.log('📚 当前对话历史:', updatedHistory);
 
       console.log('🤖 开始LLM对话...');
       
@@ -371,7 +379,7 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
         weather?: string;
         location?: string;
       } = {
-        messages: chatHistoryRef.current
+        messages: updatedHistory
       };
       
       if (locationWeatherData) {
@@ -517,11 +525,13 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
       onShowLoadingStates?.(false, false);
 
       // 6. 更新对话历史（使用原始JSON文本）
-      chatHistoryRef.current.push({
+      const newAssistantMessage: AIChatMessage = {
         role: 'assistant',
         content: aiText
-      });
-      console.log('📚 更新后的对话历史:', chatHistoryRef.current);
+      };
+      const finalHistory = [...updatedHistory, newAssistantMessage];
+      onUpdateAiChatHistory?.(finalHistory);
+      console.log('📚 更新后的对话历史:', finalHistory);
 
       // 7. 根据mode处理不同类型的回复
       if (parsedResponse.mode === 'end') {

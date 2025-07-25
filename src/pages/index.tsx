@@ -19,10 +19,12 @@ export default function Home() {
     diaryEntry,
     hasStartedConversation,
     showDiaryPreview,
+    aiChatHistory,
     setMessages,
     setDiaryEntry,
     setHasStartedConversation,
     setShowDiaryPreview,
+    setAiChatHistory,
     clearConversationState
   } = useConversationState();
   
@@ -79,14 +81,19 @@ export default function Home() {
   
   // 对话恢复状态
   const [showRestoreNotice, setShowRestoreNotice] = useState(false);
+  const [hasCheckedRestore, setHasCheckedRestore] = useState(false);
   
-  // 显示对话恢复提示
+  // 显示对话恢复提示 - 只在组件首次挂载时检查
   useEffect(() => {
-    if (messages.length > 0 && hasStartedConversation) {
+    if (!hasCheckedRestore && messages.length > 0 && hasStartedConversation) {
       console.log('💭 对话状态已从本地存储恢复');
       setShowRestoreNotice(true);
+      setHasCheckedRestore(true);
+    } else if (!hasCheckedRestore) {
+      // 如果没有消息需要恢复，也标记为已检查
+      setHasCheckedRestore(true);
     }
-  }, [messages.length, hasStartedConversation]);
+  }, [messages.length, hasStartedConversation, hasCheckedRestore]);
 
   // 添加新消息到对话记录
   const addNewMessages = (userText: string, aiText: string, mode?: string) => {
@@ -423,6 +430,8 @@ export default function Home() {
           onShowLoadingStates={handleLoadingStates}
           onClearDiaryPreview={handleClearDiaryPreview}
           locationWeatherData={locationWeatherData}
+          aiChatHistory={aiChatHistory}
+          onUpdateAiChatHistory={setAiChatHistory}
         />
       )}
 
