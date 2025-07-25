@@ -26,7 +26,7 @@ function createSystemMessage(weather?: string, location?: string): Message {
   const locationContext = location ? `当前位置：${location}` : '';
   
   const environmentInfo = [weatherContext, locationContext].filter(Boolean).join('，');
-  const environmentSection = environmentInfo ? `\n\n# 环境信息\n${environmentInfo}。你可以在对话中自然地提及天气或位置，让对话更贴近用户的实际情况。` : '';
+  const environmentSection = environmentInfo ? `\n\n# 环境信息\n${environmentInfo}。` : '';
 
   return {
     role: "system",
@@ -61,6 +61,7 @@ function createSystemMessage(weather?: string, location?: string): Message {
 
 # 时间背景
 ${timeContext}${environmentSection}
+你可以了解这些信息，但是不用刻意提起，除非用户提及。
 
 ## 重要提醒
 - 你的回复必须是严格的JSON格式，不能包含任何markdown标记或代码块标记
