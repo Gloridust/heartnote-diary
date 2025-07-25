@@ -333,6 +333,24 @@ export default function Profile() {
                   </button>
                 </div>
               </div>
+              {/* 心情趋势图 */}
+              {moodTrend.length > 0 && (
+                <div className="trend-card mb-6">
+                  <div className="card-header">
+                    <h3 className="card-title">📈 心情趋势</h3>
+                    <span className="card-subtitle">近{getFilterPeriodText(filterPeriod)} · {moodTrend.length} 条记录</span>
+                  </div>
+                  <div className="chart-wrapper">
+                    <MoodChart data={moodTrend} width={320} height={140} />
+                  </div>
+                  <div className="chart-legend">
+                    <div className="legend-item">
+                      <div className="legend-dot" style={{ backgroundColor: 'var(--primary-base)' }}></div>
+                      <span>心情评分</span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* 统计卡片网格 */}
               <div className="stats-grid mb-6">
@@ -364,25 +382,6 @@ export default function Profile() {
                   <div className="stat-label">日均篇数</div>
                 </div>
               </div>
-
-              {/* 心情趋势图 */}
-              {moodTrend.length > 0 && (
-                <div className="trend-card mb-6">
-                  <div className="card-header">
-                    <h3 className="card-title">📈 心情趋势</h3>
-                    <span className="card-subtitle">近{getFilterPeriodText(filterPeriod)} · {moodTrend.length} 条记录</span>
-                  </div>
-                  <div className="chart-wrapper">
-                    <MoodChart data={moodTrend} width={320} height={140} />
-                  </div>
-                  <div className="chart-legend">
-                    <div className="legend-item">
-                      <div className="legend-dot" style={{ backgroundColor: 'var(--primary-base)' }}></div>
-                      <span>心情评分</span>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* 详细统计 */}
               <div className="detail-cards">
