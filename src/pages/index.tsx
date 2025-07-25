@@ -189,6 +189,12 @@ export default function Home() {
         weather: diaryData?.locationWeatherData?.weather
       };
       
+      // 调试日志：检查位置和天气数据
+      console.log('🌍 日记生成时的位置天气数据检查:');
+      console.log('  locationWeatherData:', diaryData?.locationWeatherData);
+      console.log('  location:', diaryData?.locationWeatherData?.location);
+      console.log('  weather:', diaryData?.locationWeatherData?.weather);
+      
       console.log('📋 生成的日记预览对象:', diary);
       setDiaryEntry(diary);
       setShowDiaryPreview(true); // 显示预览卡片，不切换界面

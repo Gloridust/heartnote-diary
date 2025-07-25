@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import LocationWeatherStatus from '../components/LocationWeatherStatus';
 
 interface TestResult {
   test: string;
@@ -182,6 +183,15 @@ export default function TestAudio() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* 位置和天气测试 */}
+          <div style={{ backgroundColor: 'var(--surface-main)' }} 
+               className="p-4 rounded-lg">
+            <h3 className="text-subtitle mb-3" style={{ color: 'var(--text-primary)' }}>
+              位置和天气测试
+            </h3>
+            <LocationWeatherStatus />
           </div>
 
           {/* 实际录音测试 */}
