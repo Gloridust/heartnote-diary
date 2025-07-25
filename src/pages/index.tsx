@@ -9,6 +9,7 @@ import SettingsModal from '../components/SettingsModal';
 import PWAInstallPrompt from '../components/PWAInstallPrompt';
 import PWAStatus from '../components/PWAStatus';
 import { getLocationAndWeather, type LocationWeatherData } from '../lib/location-weather';
+import IOSLocationPermission from '../components/IOSLocationPermission';
 
 export default function Home() {
   // 对话状态管理 - 主页面维护完整对话记录
@@ -34,6 +35,7 @@ export default function Home() {
   // 位置和天气状态
   const [locationWeatherData, setLocationWeatherData] = useState<LocationWeatherData | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [showIOSLocationPrompt, setShowIOSLocationPrompt] = useState(false);
 
   // 初始化用户ID
   useEffect(() => {
@@ -45,19 +47,28 @@ export default function Home() {
   // 初始化位置和天气信息
   useEffect(() => {
     if (!locationWeatherData && !isLoadingLocation) {
-      console.log('🌍 首页启动时获取位置和天气信息...');
-      setIsLoadingLocation(true);
-      getLocationAndWeather()
-        .then((data) => {
-          console.log('✅ 位置和天气信息获取成功:', data);
-          setLocationWeatherData(data);
-        })
-        .catch((error) => {
-          console.warn('⚠️ 位置和天气信息获取失败:', error);
-        })
-        .finally(() => {
-          setIsLoadingLocation(false);
-        });
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      
+      if (isIOS) {
+        // iOS设备需要用户手动触发权限请求
+        console.log('📱 检测到iOS设备，显示位置权限请求弹窗');
+        setShowIOSLocationPrompt(true);
+      } else {
+        // 非iOS设备自动获取
+        console.log('🌍 非iOS设备，自动获取位置和天气信息...');
+        setIsLoadingLocation(true);
+        getLocationAndWeather()
+          .then((data) => {
+            console.log('✅ 位置和天气信息获取成功:', data);
+            setLocationWeatherData(data);
+          })
+          .catch((error) => {
+            console.warn('⚠️ 位置和天气信息获取失败:', error);
+          })
+          .finally(() => {
+            setIsLoadingLocation(false);
+          });
+      }
     }
   }, []);
 
@@ -333,6 +344,19 @@ export default function Home() {
     return '😢';
   };
 
+  // iOS位置权限处理
+  const handleIOSLocationGranted = (data: LocationWeatherData) => {
+    console.log('📱 iOS位置权限已授予:', data);
+    setLocationWeatherData(data);
+    setShowIOSLocationPrompt(false);
+  };
+
+  const handleIOSLocationDenied = (error: string) => {
+    console.log('📱 iOS位置权限被拒绝:', error);
+    setShowIOSLocationPrompt(false);
+    // iOS位置权限被拒绝后不影响正常使用
+  };
+
   return (
     <>
       <Head>
@@ -589,6 +613,14 @@ export default function Home() {
 
       {/* PWA状态显示 */}
       <PWAStatus />
+
+      {/* iOS位置权限请求 */}
+      {showIOSLocationPrompt && (
+        <IOSLocationPermission
+          onLocationGranted={handleIOSLocationGranted}
+          onLocationDenied={handleIOSLocationDenied}
+        />
+      )}
       </div>
     </>
   );

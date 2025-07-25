@@ -30,7 +30,7 @@ export interface LocationWeatherData {
 const OPENWEATHER_API_KEY = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY;
 
 /**
- * 获取用户当前位置
+ * 获取用户当前位置 - iOS Safari优化版本
  */
 export function getCurrentPosition(): Promise<GeolocationPosition> {
   return new Promise((resolve, reject) => {
@@ -39,9 +39,23 @@ export function getCurrentPosition(): Promise<GeolocationPosition> {
       return;
     }
 
+    // 检测是否为iOS设备
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
+    // iOS Safari需要更保守的配置
+    const options: PositionOptions = {
+      enableHighAccuracy: isIOS ? false : true, // iOS上禁用高精度以提高成功率
+      timeout: isIOS ? 15000 : 10000, // iOS给更长的超时时间
+      maximumAge: isIOS ? 600000 : 300000 // iOS使用更长的缓存时间(10分钟)
+    };
+
+    console.log(`📍 开始获取GPS位置 (${isIOS ? 'iOS' : '其他'} 设备)`);
+    console.log('📍 配置选项:', options);
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         console.log('📍 GPS位置获取成功:', position.coords);
+        console.log('📍 精度:', position.coords.accuracy, 'meters');
         resolve(position);
       },
       (error) => {
@@ -50,13 +64,19 @@ export function getCurrentPosition(): Promise<GeolocationPosition> {
         
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            errorMessage = '用户拒绝了位置权限请求';
+            errorMessage = isIOS 
+              ? 'iOS需要在设置中开启位置权限，并确保在HTTPS环境下访问' 
+              : '用户拒绝了位置权限请求';
             break;
           case error.POSITION_UNAVAILABLE:
-            errorMessage = '位置信息不可用';
+            errorMessage = isIOS 
+              ? 'iOS位置服务不可用，请检查设备定位是否开启' 
+              : '位置信息不可用';
             break;
           case error.TIMEOUT:
-            errorMessage = '获取位置超时';
+            errorMessage = isIOS 
+              ? 'iOS位置获取超时，请确保GPS信号良好' 
+              : '获取位置超时';
             break;
           default:
             errorMessage = '未知的位置错误';
@@ -65,36 +85,50 @@ export function getCurrentPosition(): Promise<GeolocationPosition> {
         
         reject(new Error(errorMessage));
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 300000 // 5分钟缓存
-      }
+      options
     );
   });
 }
 
 /**
- * 使用OpenStreetMap逆地理编码获取详细地址
+ * 使用OpenStreetMap逆地理编码获取详细地址 - iOS Safari兼容版本
  */
 export async function getAddressFromCoordinates(
   latitude: number, 
   longitude: number
 ): Promise<LocationInfo> {
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  
   try {
-    console.log('🗺️ 开始逆地理编码:', latitude, longitude);
+    console.log(`🗺️ 开始逆地理编码 (${isIOS ? 'iOS' : '其他'} 设备):`, latitude, longitude);
     
+    // iOS Safari的网络请求配置
+    const fetchOptions: RequestInit = {
+      headers: {
+        'User-Agent': 'HeartnoteApp/1.0',
+        'Accept': 'application/json',
+        'Accept-Language': 'zh-CN,zh'
+      },
+      // iOS Safari需要显式设置
+      mode: 'cors',
+      cache: 'default'
+    };
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), isIOS ? 15000 : 10000);
+
     const response = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1&accept-language=zh-CN,zh`,
       {
-        headers: {
-          'User-Agent': 'HeartnoteApp/1.0'
-        }
+        ...fetchOptions,
+        signal: controller.signal
       }
     );
 
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
-      throw new Error(`逆地理编码请求失败: ${response.status}`);
+      throw new Error(`逆地理编码请求失败: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
@@ -123,6 +157,22 @@ export async function getAddressFromCoordinates(
 
   } catch (error) {
     console.error('❌ 逆地理编码失败:', error);
+    
+    // iOS Safari fallback: 当逆地理编码失败时，返回基础位置信息
+    if (isIOS) {
+      console.log('🔄 iOS fallback: 使用基础位置信息');
+      return {
+        latitude,
+        longitude,
+        address: `位置: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+        city: '未知城市',
+        district: '未知区域',
+        street: '未知街道',
+        country: '未知国家',
+        formatted_address: `纬度${latitude.toFixed(4)}, 经度${longitude.toFixed(4)}`
+      };
+    }
+    
     throw error;
   }
 }
@@ -157,7 +207,7 @@ function formatChineseAddress(address: {
 }
 
 /**
- * 使用OpenWeatherMap获取天气信息
+ * 使用OpenWeatherMap获取天气信息 - iOS Safari兼容版本
  */
 export async function getWeatherFromCoordinates(
   latitude: number, 
@@ -167,15 +217,30 @@ export async function getWeatherFromCoordinates(
     throw new Error('OpenWeatherMap API密钥未配置。请在 .env.local 文件中设置 NEXT_PUBLIC_OPENWEATHER_API_KEY 并重启开发服务器');
   }
 
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
   try {
-    console.log('🌤️ 开始获取天气信息:', latitude, longitude);
+    console.log(`🌤️ 开始获取天气信息 (${isIOS ? 'iOS' : '其他'} 设备):`, latitude, longitude);
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), isIOS ? 15000 : 10000);
     
     const response = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=zh_cn`
+      `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=zh_cn`,
+      {
+        signal: controller.signal,
+        headers: {
+          'Accept': 'application/json'
+        },
+        mode: 'cors',
+        cache: 'default'
+      }
     );
 
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
-      throw new Error(`天气API请求失败: ${response.status}`);
+      throw new Error(`天气API请求失败: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
@@ -195,6 +260,20 @@ export async function getWeatherFromCoordinates(
 
   } catch (error) {
     console.error('❌ 获取天气失败:', error);
+    
+    // iOS Safari fallback: 当天气API失败时，返回默认天气信息
+    if (isIOS) {
+      console.log('🔄 iOS fallback: 使用默认天气信息');
+      return {
+        temperature: 20,
+        description: '天气信息获取失败',
+        icon: '01d',
+        humidity: 50,
+        wind_speed: 0,
+        feels_like: 20
+      };
+    }
+    
     throw error;
   }
 }
