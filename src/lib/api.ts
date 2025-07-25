@@ -13,6 +13,22 @@ export interface DiaryApiRequest {
   date: string;         // 日期时间 (YYYY-MM-DD HH:MM:SS)
   score?: number;       // 心情评分 (1-10)
   tag?: string;         // 标签
+  location?: {          // 位置信息
+    latitude: number;
+    longitude: number;
+    formatted_address: string;
+    city: string;
+    district: string;
+    street: string;
+  };
+  weather?: {           // 天气信息
+    temperature: number;
+    description: string;
+    icon: string;
+    humidity: number;
+    wind_speed: number;
+    feels_like: number;
+  };
 }
 
 export interface DiaryApiResponse {
@@ -164,6 +180,22 @@ export function convertApiDataToDiaryEntry(apiData: {
   date: string;
   score?: number;
   tag?: string;
+  location?: {
+    latitude: number;
+    longitude: number;
+    formatted_address: string;
+    city: string;
+    district: string;
+    street: string;
+  };
+  weather?: {
+    temperature: number;
+    description: string;
+    icon: string;
+    humidity: number;
+    wind_speed: number;
+    feels_like: number;
+  };
 }): DiaryEntry {
   return {
     id: apiData.diary_id,
@@ -173,7 +205,9 @@ export function convertApiDataToDiaryEntry(apiData: {
     time: extractTimeFromApiString(apiData.date),
     generated: true, // 从数据库来的都标记为已生成
     score: apiData.score || 5,
-    tag: apiData.tag || 'personal'
+    tag: apiData.tag || 'personal',
+    location: apiData.location,
+    weather: apiData.weather
   };
 }
 

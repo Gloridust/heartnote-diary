@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS diaries (
     date TIMESTAMPTZ NOT NULL,
     score INTEGER CHECK (score >= 1 AND score <= 10),
     tag VARCHAR(100),
+    location JSONB,           -- 位置信息 {latitude, longitude, formatted_address, city, district, street}
+    weather JSONB,            -- 天气信息 {temperature, description, icon, humidity, wind_speed, feels_like}
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );

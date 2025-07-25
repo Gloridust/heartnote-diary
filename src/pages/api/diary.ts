@@ -9,6 +9,22 @@ interface DiaryApiRequest {
   date: string;         // 日期时间 (YYYY-MM-DD HH:MM:SS)
   score?: number;       // 心情评分 (1-10)
   tag?: string;         // 标签
+  location?: {          // 位置信息
+    latitude: number;
+    longitude: number;
+    formatted_address: string;
+    city: string;
+    district: string;
+    street: string;
+  };
+  weather?: {           // 天气信息
+    temperature: number;
+    description: string;
+    icon: string;
+    humidity: number;
+    wind_speed: number;
+    feels_like: number;
+  };
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -44,7 +60,7 @@ async function handleSaveDiary(req: NextApiRequest, res: NextApiResponse) {
   console.log('📝 保存日记请求:', diaryData);
 
   try {
-    const { id: userId, diary_id, title, content, date, score, tag } = diaryData;
+    const { id: userId, diary_id, title, content, date, score, tag, location, weather } = diaryData;
 
     // 1. 检查用户是否存在，不存在则自动创建
     const { data: existingUser } = await supabase
@@ -79,6 +95,8 @@ async function handleSaveDiary(req: NextApiRequest, res: NextApiResponse) {
           date,
           score,
           tag,
+          location,
+          weather,
           updated_at: new Date().toISOString()
         })
         .eq('id', diary_id)
@@ -102,7 +120,9 @@ async function handleSaveDiary(req: NextApiRequest, res: NextApiResponse) {
           content,
           date,
           score,
-          tag
+          tag,
+          location,
+          weather
         }])
         .select()
         .single();
@@ -186,7 +206,9 @@ async function handleGetUserDiaries(req: NextApiRequest, res: NextApiResponse) {
       content: diary.content,
       date: diary.date,
       score: diary.score,
-      tag: diary.tag
+      tag: diary.tag,
+      location: diary.location,
+      weather: diary.weather
     })) || [];
 
     console.log('✅ 获取日记成功:', formattedDiaries);

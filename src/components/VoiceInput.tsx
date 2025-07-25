@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import LoadingAnimation from './LoadingAnimation';
+import { getLocationAndWeather, formatWeatherForPrompt, formatLocationForPrompt, type LocationWeatherData } from '../lib/location-weather';
 
 interface DiaryData {
   mode: string;
@@ -33,6 +33,10 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const chatHistoryRef = useRef<Array<{role: 'user' | 'assistant', content: string}>>([]);
+  
+  // 位置和天气状态
+  const [locationWeatherData, setLocationWeatherData] = useState<LocationWeatherData | null>(null);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
   // 录音计时器
   useEffect(() => {
@@ -65,6 +69,23 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
       if (!hasMessages) {
         console.log('👋 首次录音，初始化对话');
         onInitConversation();
+      }
+      
+      // 如果还没有位置和天气信息，尝试获取
+      if (!locationWeatherData && !isLoadingLocation) {
+        console.log('🌍 开始获取位置和天气信息...');
+        setIsLoadingLocation(true);
+        getLocationAndWeather()
+          .then((data) => {
+            console.log('✅ 位置和天气信息获取成功:', data);
+            setLocationWeatherData(data);
+          })
+          .catch((error) => {
+            console.warn('⚠️ 位置和天气信息获取失败，将不影响正常录音:', error);
+          })
+          .finally(() => {
+            setIsLoadingLocation(false);
+          });
       }
       
       // === 移动端Safari和Chrome兼容性检查 ===
@@ -359,14 +380,31 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
       console.log('📚 当前对话历史:', chatHistoryRef.current);
 
       console.log('🤖 开始LLM对话...');
+      
+      // 准备聊天请求数据，包含位置和天气信息
+      const chatRequestData: {
+        messages: Array<{role: 'user' | 'assistant', content: string}>;
+        weather?: string;
+        location?: string;
+      } = {
+        messages: chatHistoryRef.current
+      };
+      
+      if (locationWeatherData) {
+        chatRequestData.weather = formatWeatherForPrompt(locationWeatherData.weather);
+        chatRequestData.location = formatLocationForPrompt(locationWeatherData.location);
+        console.log('🌍 附加环境信息到聊天请求:', {
+          weather: chatRequestData.weather,
+          location: chatRequestData.location
+        });
+      }
+      
       const chatResponse = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          messages: chatHistoryRef.current
-        })
+        body: JSON.stringify(chatRequestData)
       });
 
       if (!chatResponse.ok) {
@@ -514,7 +552,12 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
         // 稍微延迟后显示日记，确保对话记录先更新
         setTimeout(() => {
           if (onGenerateDiary) {
-            onGenerateDiary(parsedResponse);
+            // 将位置和天气信息附加到日记数据中
+            const diaryDataWithLocation = {
+              ...parsedResponse,
+              locationWeatherData
+            };
+            onGenerateDiary(diaryDataWithLocation);
           }
           // 结束会话
           handleEndSession();

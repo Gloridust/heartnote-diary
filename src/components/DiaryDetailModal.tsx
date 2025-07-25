@@ -232,6 +232,36 @@ export default function DiaryDetailModal({
             </div>
           </div>
 
+          {/* 位置和天气信息 */}
+          {(currentDiary.location || currentDiary.weather) && (
+            <div className="environment-info mb-4" style={{
+              backgroundColor: 'var(--surface-accent)',
+              padding: '12px',
+              borderRadius: '8px',
+              border: '1px solid var(--surface-dark)'
+            }}>
+              <div className="field-label mb-2">🌍 环境信息</div>
+              <div className="environment-grid">
+                {currentDiary.weather && (
+                  <div className="env-item">
+                    <span className="env-icon">🌤️</span>
+                    <span className="env-text" style={{ color: 'var(--text-secondary)' }}>
+                      {currentDiary.weather.temperature}℃，{currentDiary.weather.description}
+                    </span>
+                  </div>
+                )}
+                {currentDiary.location && (
+                  <div className="env-item">
+                    <span className="env-icon">📍</span>
+                    <span className="env-text" style={{ color: 'var(--text-secondary)' }}>
+                      {currentDiary.location.formatted_address}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* 标签和评分 */}
           <div className="diary-tags mb-4">
             <div className="tag-score-row">
@@ -629,6 +659,28 @@ export default function DiaryDetailModal({
           .diary-content {
             border-color: rgba(255, 255, 255, 0.2);
           }
+        }
+        
+        .environment-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        
+        .env-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        
+        .env-icon {
+          font-size: 16px;
+          min-width: 20px;
+        }
+        
+        .env-text {
+          font-size: 13px;
+          line-height: 1.4;
         }
 
         @media (max-width: 640px) {

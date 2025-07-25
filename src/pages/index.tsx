@@ -135,7 +135,31 @@ export default function Home() {
   };
 
   // 生成日记功能
-  const generateDiary = (diaryData?: { mode: string; message: string; score?: number; tag?: string }) => {
+  const generateDiary = (diaryData?: { 
+    mode: string; 
+    message: string; 
+    score?: number; 
+    tag?: string; 
+    locationWeatherData?: {
+      location: {
+        latitude: number;
+        longitude: number;
+        formatted_address: string;
+        city: string;
+        district: string;
+        street: string;
+      };
+      weather: {
+        temperature: number;
+        description: string;
+        icon: string;
+        humidity: number;
+        wind_speed: number;
+        feels_like: number;
+      };
+      timestamp: string;
+    }
+  }) => {
     console.log('📝 生成日记，数据:', diaryData);
     
     let diaryContent = '';
@@ -158,7 +182,9 @@ export default function Home() {
         time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
         generated: true,
         score: moodScore,
-        tag: diaryTag
+        tag: diaryTag,
+        location: diaryData?.locationWeatherData?.location,
+        weather: diaryData?.locationWeatherData?.weather
       };
       
       console.log('📋 生成的日记预览对象:', diary);
@@ -209,7 +235,9 @@ export default function Home() {
         content: diaryEntry.content,
         date: formatDateForApi(new Date()), // 使用当前时间
         score: diaryEntry.score,
-        tag: diaryEntry.tag
+        tag: diaryEntry.tag,
+        location: diaryEntry.location,
+        weather: diaryEntry.weather
       };
       
       // 调用保存API
@@ -511,7 +539,7 @@ export default function Home() {
           console.log('👤 用户ID已更新:', newUserId);
         }}
       />
-      </div>
+    </div>
     </>
   );
 }

@@ -55,6 +55,9 @@ yarn install
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
+# OpenWeatherMap 天气API配置
+NEXT_PUBLIC_OPENWEATHER_API_KEY=your_openweather_api_key
+
 # 字节跳动语音识别API配置
 BYTEDANCE_APP_KEY=your_app_key_here
 BYTEDANCE_ACCESS_TOKEN=your_access_token_here
@@ -78,6 +81,9 @@ DOUBAO_ACCESS_KEY=your_access_key_here
 - **`NEXT_PUBLIC_SUPABASE_ANON_KEY`**: Supabase 匿名公钥
   - 在 Supabase 控制台的 Settings > API 中找到
   - 这是公开的密钥，可以安全地暴露给客户端
+- **`NEXT_PUBLIC_OPENWEATHER_API_KEY`**: OpenWeatherMap API密钥
+  - 在 [OpenWeatherMap](https://openweathermap.org/api) 注册获取免费API密钥
+  - 用于获取用户当前位置的天气信息
 - **`BYTEDANCE_APP_KEY`**: 字节跳动语音识别服务的应用密钥
 - **`BYTEDANCE_ACCESS_TOKEN`**: 字节跳动语音识别服务的访问令牌
 - **`ARK_API_KEY`**: 字节跳动大模型服务的API密钥

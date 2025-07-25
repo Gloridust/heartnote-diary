@@ -7,6 +7,8 @@ interface Message {
 
 interface ChatRequest {
   messages: Message[];
+  weather?: string;
+  location?: string;
 }
 
 interface ChatResponse {
@@ -15,10 +17,20 @@ interface ChatResponse {
   error?: string;
 }
 
-// 系统提示词 - 统一管理
-const SYSTEM_MESSAGE: Message = {
-  role: "system",
-  content: `# 角色
+// 动态生成系统提示词
+function createSystemMessage(weather?: string, location?: string): Message {
+  const now = new Date();
+  const timeContext = `今天是 ${now.toLocaleDateString('zh-CN')} ${['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][now.getDay()]} ${now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`;
+  
+  const weatherContext = weather ? `当前天气：${weather}` : '';
+  const locationContext = location ? `当前位置：${location}` : '';
+  
+  const environmentInfo = [weatherContext, locationContext].filter(Boolean).join('，');
+  const environmentSection = environmentInfo ? `\n\n# 环境信息\n${environmentInfo}。你可以在对话中自然地提及天气或位置，让对话更贴近用户的实际情况。` : '';
+
+  return {
+    role: "system",
+    content: `# 角色
 你是"信语日记 APP"中的日记助手"小语"，是一个由 LLM 驱动的对话式日记本引导者。每天生活结束时，你主动与用户对话，以简短且循循善诱的方式，引导用户分享当天的经历，了解用户过得如何、发生了何事等日记要素。你的回答和问题要尽可能简短，不能编造未提及的虚假内容。
 
 ## 技能
@@ -46,14 +58,14 @@ const SYSTEM_MESSAGE: Message = {
 
 请用中文回复，语气要亲和自然。适当时机偶尔加入一句安慰/鼓励的话，但不要浪费太多时间。
 
-# 今天的时间背景
-今天是 ${new Date().toLocaleDateString('zh-CN')} ${['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][new Date().getDay()]} ${new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}。
+# 时间背景
+${timeContext}${environmentSection}
 
 ## 重要提醒
 - 你的回复必须是严格的JSON格式，不能包含任何markdown标记或代码块标记
-- JSON中的字符串值不能包含换行符、制表符等控制字符
-`
-};
+- JSON中的字符串值不能包含换行符、制表符等控制字符`
+  };
+}
 
 export default async function handler(
   req: NextApiRequest,
@@ -64,14 +76,14 @@ export default async function handler(
     return res.status(405).json({ success: false, error: `Method ${req.method} Not Allowed` });
   }
 
-  const { messages }: ChatRequest = req.body;
+  const { messages, weather, location }: ChatRequest = req.body;
 
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ success: false, error: 'Messages array is required' });
   }
 
   try {
-    const content = await getChatCompletion(messages);
+    const content = await getChatCompletion(messages, weather, location);
     return res.status(200).json({
       success: true,
       content
@@ -85,7 +97,7 @@ export default async function handler(
   }
 }
 
-async function getChatCompletion(messages: Message[]): Promise<string> {
+async function getChatCompletion(messages: Message[], weather?: string, location?: string): Promise<string> {
   const chatUrl = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
   
   const headers = {
@@ -93,8 +105,10 @@ async function getChatCompletion(messages: Message[]): Promise<string> {
     "Authorization": `Bearer ${process.env.ARK_API_KEY || ""}`
   };
 
+  const systemMessage = createSystemMessage(weather, location);
+  
   const requestBody = {
-    messages: [SYSTEM_MESSAGE, ...messages],
+    messages: [systemMessage, ...messages],
     model: process.env.DOUBAO_MODEL || "doubao-1-5-pro-32k-250115",
     stream: false,
     max_tokens: 2000,

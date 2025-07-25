@@ -21,6 +21,22 @@ export interface Diary {
   date: string
   score?: number
   tag?: string
+  location?: {
+    latitude: number
+    longitude: number
+    formatted_address: string
+    city: string
+    district: string
+    street: string
+  }
+  weather?: {
+    temperature: number
+    description: string
+    icon: string
+    humidity: number
+    wind_speed: number
+    feels_like: number
+  }
   created_at?: string
   updated_at?: string
 }
