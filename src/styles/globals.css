@@ -374,6 +374,32 @@ body {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
+/* 心情颜色说明 */
+.mood-color-legend {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: var(--surface-accent);
+  border-radius: var(--radius-medium);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.mood-color-legend .w-3 {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* 移动端适配 */
+@media (max-width: 640px) {
+  .mood-color-legend {
+    margin-top: 12px;
+    padding: 10px;
+  }
+  
+  .mood-color-legend .flex {
+    gap: 12px;
+  }
+}
+
 /* 日记预览卡片 - 严格按照设计稿 */
 .diary-preview {
   background-color: var(--surface-main);

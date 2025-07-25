@@ -431,39 +431,7 @@ export default function Diary() {
                   )}
                 </div>
               )}
-              {/* 心情颜色图例 */}
-              {!isLoading && diaryEntries.some(entry => entry.score !== undefined && entry.score !== null) && (
-                <div className="flex items-center gap-2 mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                  <span>心情:</span>
-                  <div className="flex gap-1">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: getMoodColor(9).bg }}
-                      title="😊 开心 (8-10分)"
-                    ></div>
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: getMoodColor(7).bg }}
-                      title="🙂 愉快 (6-7分)"
-                    ></div>
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: getMoodColor(5).bg }}
-                      title="😐 平静 (4-5分)"
-                    ></div>
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: getMoodColor(3).bg }}
-                      title="😔 低落 (2-3分)"
-                    ></div>
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: getMoodColor(1).bg }}
-                      title="😢 难过 (0-1分)"
-                    ></div>
-                  </div>
-                </div>
-              )}
+
             </div>
             <button onClick={() => navigateMonth('next')} className="calendar-nav-button">
               <span style={{ color: 'var(--text-secondary)' }}>›</span>
@@ -483,6 +451,49 @@ export default function Diary() {
           <div className="calendar-grid">
             {renderCalendar()}
           </div>
+
+          {/* 颜色心情说明 */}
+          {!isLoading && diaryEntries.some(entry => entry.score !== undefined && entry.score !== null) && (
+            <div className="mood-color-legend" style={{ backgroundColor: 'transparent', border: 'none' }}>
+              <div className="flex justify-center items-center gap-4 flex-wrap">
+                <div className="flex items-center gap-1">
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: getMoodColor(9).bg }}
+                  ></div>
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>开心</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: getMoodColor(7).bg }}
+                  ></div>
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>愉快</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: getMoodColor(5).bg }}
+                  ></div>
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>平静</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: getMoodColor(3).bg }}
+                  ></div>
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>低落</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: getMoodColor(1).bg }}
+                  ></div>
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>难过</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 选中日期的日记列表 */}
