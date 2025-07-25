@@ -192,6 +192,7 @@ export default function Home() {
   // 生成日记功能
   const generateDiary = (diaryData?: { 
     mode: string; 
+    title?: string;
     message: string; 
     score?: number; 
     tag?: string; 
@@ -227,7 +228,8 @@ export default function Home() {
       diaryContent = diaryData.message;
       moodScore = diaryData.score || 5;
       diaryTag = diaryData.tag || 'personal';
-      diaryTitle = getTagTitle(diaryTag);
+      // 优先使用AI生成的title，fallback到tag标题
+      diaryTitle = diaryData.title || getTagTitle(diaryTag);
       
       const diary: DiaryEntry = {
         id: Date.now(),

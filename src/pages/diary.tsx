@@ -169,6 +169,61 @@ export default function Diary() {
     return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   };
 
+  // 计算指定日期的平均心情评分
+  const getDateAverageMoodScore = (dateKey: string): number | null => {
+    const entriesForDate = diaryEntries.filter(entry => entry.date === dateKey);
+    if (entriesForDate.length === 0) return null;
+    
+    const validScores = entriesForDate
+      .map(entry => entry.score)
+      .filter((score): score is number => score !== undefined && score !== null);
+    
+    if (validScores.length === 0) return null;
+    
+    const average = validScores.reduce((sum, score) => sum + score, 0) / validScores.length;
+    return Math.round(average * 10) / 10; // 保留一位小数
+  };
+
+  // 根据心情评分获取对应的颜色
+  const getMoodColor = (score: number): { bg: string; bgHover: string; text: string } => {
+    if (score >= 8) {
+      // 😊 非常开心 - 绿色系
+      return {
+        bg: '#10B981', // emerald-500
+        bgHover: '#059669', // emerald-600
+        text: '#FFFFFF'
+      };
+    } else if (score >= 6) {
+      // 🙂 愉快 - 蓝色系
+      return {
+        bg: '#3B82F6', // blue-500
+        bgHover: '#2563EB', // blue-600
+        text: '#FFFFFF'
+      };
+    } else if (score >= 4) {
+      // 😐 平静 - 黄色系
+      return {
+        bg: '#F59E0B', // amber-500
+        bgHover: '#D97706', // amber-600
+        text: '#FFFFFF'
+      };
+    } else if (score >= 2) {
+      // 😔 低落 - 橙色系
+      return {
+        bg: '#EF4444', // red-500
+        bgHover: '#DC2626', // red-600
+        text: '#FFFFFF'
+      };
+    } else {
+      // 😢 很难过 - 深红色系
+      return {
+        bg: '#991B1B', // red-800
+        bgHover: '#7F1D1D', // red-900
+        text: '#FFFFFF'
+      };
+    }
+  };
+
   const renderCalendar = () => {
     const daysInMonth = getDaysInMonth(currentMonth);
     const firstDay = getFirstDayOfMonth(currentMonth);
@@ -188,23 +243,61 @@ export default function Diary() {
         selectedDate.getMonth() === currentMonth.getMonth() &&
         selectedDate.getFullYear() === currentMonth.getFullYear();
 
+      // 获取该日期的平均心情评分
+      const averageScore = getDateAverageMoodScore(dateKey);
+      
       // 调试信息：只在有日记的日期打印
       if (hasDiary) {
-        console.log(`📅 日期 ${dateKey} 有日记:`, hasDiary);
-        console.log(`🗓️ 所有有日记的日期:`, datesWithDiary);
+        console.log(`📅 日期 ${dateKey} 有日记:`, hasDiary, '平均评分:', averageScore);
+      }
+
+            // 计算样式和事件处理器
+      let buttonStyle: React.CSSProperties = {};
+      let className = 'calendar-day text-sm font-medium ';
+      let hoverHandlers: {
+        onMouseEnter?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+        onMouseLeave?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+      } = {};
+      
+      if (isSelected) {
+        // 选中状态优先级最高
+        className += 'calendar-day-selected';
+      } else if (hasDiary && averageScore !== null) {
+        // 有日记且有评分，使用心情颜色
+        const moodColor = getMoodColor(averageScore);
+        buttonStyle = {
+          backgroundColor: moodColor.bg,
+          color: moodColor.text,
+          transition: 'all 0.2s ease-in-out',
+          cursor: 'pointer',
+        };
+        className += 'calendar-day-mood';
+        
+        // 添加鼠标悬停事件处理
+        hoverHandlers = {
+          onMouseEnter: (e: React.MouseEvent<HTMLButtonElement>) => {
+            e.currentTarget.style.backgroundColor = moodColor.bgHover;
+          },
+          onMouseLeave: (e: React.MouseEvent<HTMLButtonElement>) => {
+            e.currentTarget.style.backgroundColor = moodColor.bg;
+          }
+        };
+      } else if (hasDiary) {
+        // 有日记但没有评分，使用默认样式
+        className += 'calendar-day-with-diary';
+      } else {
+        // 没有日记
+        className += 'text-gray-700 hover:bg-gray-100';
       }
 
       days.push(
         <button
           key={day}
           onClick={() => setSelectedDate(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day))}
-          className={`calendar-day text-sm font-medium ${
-            hasDiary 
-              ? 'calendar-day-with-diary' 
-              : isSelected
-              ? 'calendar-day-selected'
-              : 'text-gray-700 hover:bg-gray-100'
-          }`}
+          className={className}
+          style={buttonStyle}
+          title={hasDiary && averageScore !== null ? `平均心情: ${averageScore}/10` : undefined}
+          {...hoverHandlers}
         >
           {day}
         </button>
@@ -336,6 +429,39 @@ export default function Diary() {
                       ({datesWithDiary.length} 天有记录)
                     </span>
                   )}
+                </div>
+              )}
+              {/* 心情颜色图例 */}
+              {!isLoading && diaryEntries.some(entry => entry.score !== undefined && entry.score !== null) && (
+                <div className="flex items-center gap-2 mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                  <span>心情:</span>
+                  <div className="flex gap-1">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: getMoodColor(9).bg }}
+                      title="😊 开心 (8-10分)"
+                    ></div>
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: getMoodColor(7).bg }}
+                      title="🙂 愉快 (6-7分)"
+                    ></div>
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: getMoodColor(5).bg }}
+                      title="😐 平静 (4-5分)"
+                    ></div>
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: getMoodColor(3).bg }}
+                      title="😔 低落 (2-3分)"
+                    ></div>
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: getMoodColor(1).bg }}
+                      title="😢 难过 (0-1分)"
+                    ></div>
+                  </div>
                 </div>
               )}
             </div>

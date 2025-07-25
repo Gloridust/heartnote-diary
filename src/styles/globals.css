@@ -361,6 +361,19 @@ body {
   background-color: rgba(196, 181, 216, 1);
 }
 
+/* 心情评分日历日期样式 */
+.calendar-day-mood {
+  /* 基础样式由内联样式控制，这里只定义通用属性 */
+  font-weight: 600;
+  border: 2px solid transparent;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.calendar-day-mood:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
 /* 日记预览卡片 - 严格按照设计稿 */
 .diary-preview {
   background-color: var(--surface-main);

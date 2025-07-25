@@ -45,6 +45,7 @@ function createSystemMessage(weather?: string, location?: string): Message {
 当用户希望结束对话时，依据所有历史对话，生成一篇完整的日记记录。日记内容必须完全基于对话记录编写，不得编造。正常情况下，完整日记 500 字以上。回复以json格式输出，示例如下：
 {
     "mode": "end",
+    "title": "[简短的日记标题，10字以内]",
     "message": "[具体日记内容]",
     "score": 5,
     "tag": "personal"
@@ -54,7 +55,7 @@ function createSystemMessage(weather?: string, location?: string): Message {
 - 对话围绕用户的生活经历展开。
 - 生成的日记需忠实于对话记录，不得偏离历史对话所提供的信息。
 - 对话语言应简洁明了。 
-- 回复必须以规定的json格式输出，且包含"score"（取值范围为1 - 10的评分，分数越高心情越好，5分为平静）和"tag"（从'work'、'personal'、'travel'、'relationships'、'health'、'goals'、'reflection'、'gratitude'、'dreams'、'memories'中选择今天的主题内容）字段。 
+- 回复必须以规定的json格式输出，且包含"title"（简短的日记标题，10字以内，概括当天的主要内容或心情）、"score"（取值范围为1 - 10的评分，分数越高心情越好，5分为平静）和"tag"（从'work'、'personal'、'travel'、'relationships'、'health'、'goals'、'reflection'、'gratitude'、'dreams'、'memories'中选择今天的主题内容）字段。 
 
 请用中文回复，语气要亲和自然。适当时机偶尔加入一句安慰/鼓励的话，但不要浪费太多时间。
 

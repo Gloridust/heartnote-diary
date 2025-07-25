@@ -4,6 +4,7 @@ import { type AIChatMessage } from '../hooks/useConversationState';
 
 interface DiaryData {
   mode: string;
+  title?: string;
   message: string;
   score?: number;
   tag?: string;
@@ -488,11 +489,13 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
         // 最后的fallback：智能提取关键信息
         let fallbackMessage = '让我们继续聊聊吧！';
         let fallbackMode = 'continue';
+        let fallbackTitle = '今日回忆';
         
         // 检测结束模式的关键词
         if (/结束|生成日记|写日记|完成|总结/.test(aiText)) {
           fallbackMode = 'end';
           fallbackMessage = aiText.slice(0, 200); // 截取前200字符作为日记内容
+          fallbackTitle = '今日日记'; // 默认标题
         } else {
           // 提取可能的对话内容
           const messagePatterns = [
@@ -513,6 +516,7 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
         
         parsedResponse = {
           mode: fallbackMode,
+          title: fallbackTitle,
           message: fallbackMessage,
           score: 5,
           tag: 'personal'
@@ -660,8 +664,141 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
     };
   }, []);
 
+  // 直接结束对话并生成日记的函数
+  const handleQuickEndConversation = async () => {
+    try {
+      console.log('⚡ 快速结束对话，生成日记');
+      
+      // 如果当前没有开始对话，先初始化
+      if (!hasMessages) {
+        console.log('👋 首次操作，初始化对话');
+        onInitConversation();
+      }
+
+      // 模拟用户发送结束对话的文本
+      const endText = "今天的日记就是这些，帮我总结日记吧！";
+      
+      // 显示加载状态
+      onShowLoadingStates?.(false, true, endText);
+
+      // 更新AI对话历史
+      const newUserMessage: AIChatMessage = {
+        role: 'user',
+        content: endText
+      };
+      const updatedHistory = [...aiChatHistory, newUserMessage];
+      onUpdateAiChatHistory?.(updatedHistory);
+      console.log('📚 快速结束对话历史:', updatedHistory);
+
+      // 准备聊天请求数据
+      const chatRequestData: {
+        messages: Array<{role: 'user' | 'assistant', content: string}>;
+        weather?: string;
+        location?: string;
+      } = {
+        messages: updatedHistory
+      };
+      
+      if (locationWeatherData) {
+        chatRequestData.weather = formatWeatherForPrompt(locationWeatherData.weather);
+        chatRequestData.location = formatLocationForPrompt(locationWeatherData.location);
+      }
+      
+      // 调用LLM API
+      const chatResponse = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(chatRequestData)
+      });
+
+      if (!chatResponse.ok) {
+        throw new Error('AI对话失败');
+      }
+
+      const chatResult = await chatResponse.json();
+      
+      if (!chatResult.success) {
+        throw new Error(chatResult.error || 'AI对话失败');
+      }
+
+      const aiText = chatResult.content;
+      console.log('🤖 AI快速回复:', aiText);
+
+      // 解析AI回复（复用现有的解析逻辑）
+      let parsedResponse;
+      try {
+        // 简化版JSON解析
+        const cleanedText = aiText.replace(/[\u0000-\u001F\u007F-\u009F]/g, '').trim();
+        const jsonMatch = cleanedText.match(/\{[\s\S]*?\}/);
+        if (jsonMatch) {
+          parsedResponse = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error('No JSON found');
+        }
+             } catch (parseError) {
+         // 强制设置为end模式
+         parsedResponse = {
+           mode: 'end',
+           title: '今日总结',
+           message: aiText.slice(0, 500), // 取前500字符作为日记
+           score: 5,
+           tag: 'personal'
+         };
+       }
+
+      // 确保是end模式
+      parsedResponse.mode = 'end';
+
+      // 关闭加载状态
+      onShowLoadingStates?.(false, false);
+
+      // 更新完整的对话历史
+      const newAssistantMessage: AIChatMessage = {
+        role: 'assistant',
+        content: aiText
+      };
+      const finalHistory = [...updatedHistory, newAssistantMessage];
+      onUpdateAiChatHistory?.(finalHistory);
+
+      // 添加用户消息到对话记录（end模式）
+      onNewMessages(endText, '', 'end-mode');
+
+      // 延迟显示日记
+      setTimeout(() => {
+        if (onGenerateDiary) {
+          const diaryDataWithLocation = {
+            ...parsedResponse,
+            locationWeatherData
+          };
+          onGenerateDiary(diaryDataWithLocation);
+        }
+      }, 100);
+
+    } catch (error) {
+      console.error('❌ 快速结束对话失败:', error);
+      onShowLoadingStates?.(false, false);
+      setError('结束对话失败，请重试');
+    }
+  };
+
   return (
     <div className={`voice-input-container ${className}`}>
+      {/* 快速结束对话按钮 - 仅在有对话时显示 */}
+      {hasMessages && !isConnected && !showDiaryPreview && (
+        <div className="quick-end-bubble">
+          <button
+            onClick={handleQuickEndConversation}
+            className="quick-end-button"
+            title="直接结束对话并生成今日日记"
+          >
+            <span className="bubble-text">结束对话</span>
+            <span className="bubble-icon">📝</span>
+          </button>
+        </div>
+      )}
+
       {/* 错误提示 */}
       {error && (
         <div className="error-message" style={{ 
@@ -965,9 +1102,9 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
           }
         }
 
-        .voice-input-container {
+                .voice-input-container {
           position: fixed;
-                        bottom: 120px;
+          bottom: 120px;
           left: 50%;
           transform: translateX(-50%);
           z-index: 1000;
@@ -975,10 +1112,106 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
           max-width: 400px;
         }
 
+        .quick-end-bubble {
+          position: absolute;
+          bottom: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          margin-bottom: 16px;
+          animation: floatIn 0.3s ease-out;
+        }
+
+        .quick-end-button {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          border: none;
+          border-radius: 25px;
+          padding: 12px 20px;
+          cursor: pointer;
+          font-size: 14px;
+          font-weight: 500;
+          box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+          transition: all 0.3s ease;
+          white-space: nowrap;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .quick-end-button::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+          transition: left 0.5s;
+        }
+
+        .quick-end-button:hover::before {
+          left: 100%;
+        }
+
+        .quick-end-button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+          background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+        }
+
+        .quick-end-button:active {
+          transform: translateY(0);
+          box-shadow: 0 2px 10px rgba(102, 126, 234, 0.4);
+        }
+
+        .bubble-text {
+          font-weight: 600;
+          letter-spacing: 0.5px;
+        }
+
+        .bubble-icon {
+          font-size: 16px;
+          animation: bounce 2s infinite;
+        }
+
+        @keyframes floatIn {
+          from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+          }
+        }
+
+        @keyframes bounce {
+          0%, 20%, 50%, 80%, 100% {
+            transform: translateY(0);
+          }
+          40% {
+            transform: translateY(-3px);
+          }
+          60% {
+            transform: translateY(-2px);
+          }
+        }
+
         @media (max-width: 640px) {
           .voice-input-container {
-                            bottom: 110px;
+            bottom: 110px;
             width: 95%;
+          }
+          
+          .quick-end-button {
+            padding: 10px 16px;
+            font-size: 13px;
+          }
+          
+          .quick-end-bubble {
+            margin-bottom: 12px;
           }
         }
       `}</style>
