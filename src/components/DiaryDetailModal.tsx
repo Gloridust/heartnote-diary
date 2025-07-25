@@ -217,7 +217,7 @@ export default function DiaryDetailModal({
 
           {/* 日记标题 */}
           <div className="diary-field mb-4">
-            <label className="field-label">📝 标题</label>
+            {/* <label className="field-label">📝 标题</label> */}
             {isEditing ? (
               <input
                 type="text"
@@ -230,60 +230,32 @@ export default function DiaryDetailModal({
               <h3 className="diary-title">{currentDiary.title}</h3>
             )}
           </div>
-
-          {/* 日期和时间 */}
-          <div className="diary-meta mb-4">
-            <div className="meta-item">
-              <span className="meta-label">📅 日期</span>
-              <span className="meta-value">{currentDiary.date}</span>
-            </div>
-            <div className="meta-item">
-              <span className="meta-label">🕐 时间</span>
-              <span className="meta-value">{currentDiary.time}</span>
-            </div>
-          </div>
-
-          {/* 位置和天气信息 */}
-          {(currentDiary.location || currentDiary.weather) && (
-            <div className="environment-info mb-4" style={{
-              backgroundColor: 'var(--surface-accent)',
-              padding: '12px',
-              borderRadius: '8px',
-              border: '1px solid var(--surface-dark)'
-            }}>
-              <div className="field-label mb-2">🌍 环境信息</div>
-              <div className="environment-grid">
-                {currentDiary.weather && (
-                  <div className="env-item">
-                    <span className="env-icon">🌤️</span>
-                    <span className="env-text" style={{ color: 'var(--text-secondary)' }}>
-                      {currentDiary.weather.temperature}℃，{currentDiary.weather.description}
-                    </span>
-                  </div>
-                )}
-                {currentDiary.location && (
-                  <div className="env-item">
-                    <span className="env-icon">📍</span>
-                    <span className="env-text" style={{ color: 'var(--text-secondary)' }}>
-                      {currentDiary.location.formatted_address}
-                    </span>
-                  </div>
-                )}
+          {/* 日记元数据 - 时间、日期、标签、心情在同一行 */}
+          <div className="diary-metadata mb-6">
+            <div className="metadata-row">
+              {/* 日期时间 */}
+              <div className="meta-group">
+                <div className="meta-item">
+                  <span className="meta-icon">📅</span>
+                  <span className="meta-text">{currentDiary.date}</span>
+                </div>
               </div>
-            </div>
-          )}
 
-          {/* 标签和评分 */}
-          <div className="diary-tags mb-4">
-            <div className="tag-score-row">
+              {/* 时间 */}
+              <div className="meta-group">
+                <div className="meta-item">
+                  <span className="meta-icon">🕐</span>
+                  <span className="meta-text">{currentDiary.time}</span>
+                </div>
+              </div>
+
               {/* 标签 */}
-              <div className="tag-section">
-                <label className="field-label">🏷️ 标签</label>
+              <div className="meta-group">
                 {isEditing ? (
                   <select
                     value={currentDiary.tag || 'personal'}
                     onChange={(e) => handleInputChange('tag', e.target.value)}
-                    className="tag-select"
+                    className="compact-tag-select"
                   >
                     <option value="personal">个人日记</option>
                     <option value="work">工作日记</option>
@@ -297,46 +269,80 @@ export default function DiaryDetailModal({
                     <option value="memories">回忆日记</option>
                   </select>
                 ) : (
-                  <span className="tag-display">
-                    #{getTagTitle(currentDiary.tag || 'personal')}
-                  </span>
+                  <div className="meta-item">
+                    <span className="meta-icon">🏷️</span>
+                    <span className="tag-badge">{getTagTitle(currentDiary.tag || 'personal')}</span>
+                  </div>
                 )}
               </div>
 
               {/* 心情评分 */}
-              <div className="score-section">
-                <label className="field-label">😊 心情</label>
+              <div className="meta-group">
                 {isEditing ? (
-                  <input
-                    type="range"
-                    min="1"
-                    max="10"
-                    value={currentDiary.score || 5}
-                    onChange={(e) => handleInputChange('score', parseInt(e.target.value))}
-                    className="score-slider"
-                  />
+                  <div className="score-editor">
+                    <span className="meta-icon">😊</span>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={currentDiary.score || 5}
+                      onChange={(e) => handleInputChange('score', parseInt(e.target.value))}
+                      className="compact-score-slider"
+                    />
+                    <span className="score-value">{currentDiary.score || 5}</span>
+                  </div>
                 ) : (
-                  <span className="score-display">
-                    {currentDiary.score || 5}/10
-                  </span>
+                  <div className="meta-item">
+                    <span className="meta-icon">{getMoodEmoji(currentDiary.score || 5)}</span>
+                    <span className="score-badge">{currentDiary.score || 5}/10</span>
+                  </div>
                 )}
               </div>
             </div>
+
+            {/* 位置和天气信息（如果有的话，显示在第二行） */}
+            {(currentDiary.location || currentDiary.weather) && (
+              <div className="environment-row">
+                {currentDiary.weather && (
+                  <div className="meta-item">
+                    <span className="meta-icon">🌤️</span>
+                    <span className="meta-text">
+                      {currentDiary.weather.temperature}℃ {currentDiary.weather.description}
+                    </span>
+                  </div>
+                )}
+                {currentDiary.location && (
+                  <div className="meta-item">
+                    <span className="meta-icon">📍</span>
+                    <span className="meta-text location-text">
+                      {currentDiary.location.formatted_address}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* 日记内容 */}
-          <div className="diary-field">
-            <label className="field-label">📄 内容</label>
+          {/* 日记内容 - 主体区域 */}
+          <div className="diary-content-section">
+            <div className="content-header">
+              <h3 className="content-title">📝 日记内容</h3>
+              {!isEditing && (
+                <div className="content-stats">
+                  {currentDiary.content.length} 字
+                </div>
+              )}
+            </div>
             {isEditing ? (
               <textarea
                 value={currentDiary.content}
                 onChange={(e) => handleInputChange('content', e.target.value)}
-                className="field-textarea"
-                placeholder="请输入日记内容"
-                rows={10}
+                className="content-editor"
+                placeholder="请输入日记内容..."
+                rows={12}
               />
             ) : (
-              <div className="diary-content">
+              <div className="content-display">
                 {currentDiary.content}
               </div>
             )}
@@ -481,77 +487,187 @@ export default function DiaryDetailModal({
           box-shadow: 0 0 0 2px rgba(177, 156, 217, 0.2);
         }
 
-        .diary-content {
-          background-color: var(--surface-light);
-          padding: 1rem;
-          border-radius: var(--radius-small);
-          border: 1px solid var(--surface-dark);
-          white-space: pre-wrap;
-          line-height: 1.6;
-          color: var(--text-primary);
-          min-height: 200px;
+        /* 日记内容主体区域样式 */
+        .diary-content-section {
+          background-color: var(--surface-main);
+          border-radius: var(--radius-medium);
+          border: 2px solid var(--primary-light);
+          overflow: hidden;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
-        .diary-meta {
+        .content-header {
           display: flex;
-          gap: 2rem;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1rem 1.25rem;
+          background: linear-gradient(135deg, var(--primary-light) 0%, var(--surface-accent) 100%);
+          border-bottom: 1px solid var(--surface-dark);
+        }
+
+        .content-title {
+          font-size: 1.1rem;
+          font-weight: 600;
+          color: var(--text-primary);
+          margin: 0;
+        }
+
+        .content-stats {
+          font-size: 0.75rem;
+          color: var(--text-tertiary);
+          background-color: var(--surface-light);
+          padding: 0.25rem 0.5rem;
+          border-radius: 8px;
+          border: 1px solid var(--surface-dark);
+        }
+
+        .content-display {
+          padding: 1.5rem;
+          white-space: pre-wrap;
+          line-height: 1.7;
+          color: var(--text-primary);
+          font-size: 1rem;
+          min-height: 250px;
+          background-color: var(--surface-main);
+        }
+
+        .content-editor {
+          width: 100%;
+          padding: 1.5rem;
+          border: none;
+          font-size: 1rem;
+          background-color: var(--surface-main);
+          color: var(--text-primary);
+          line-height: 1.7;
+          resize: vertical;
+          min-height: 250px;
+          font-family: inherit;
+        }
+
+        .content-editor:focus {
+          outline: none;
+          background-color: var(--surface-light);
+        }
+
+        .content-editor::placeholder {
+          color: var(--text-tertiary);
+          opacity: 0.7;
+        }
+
+        /* 新的元数据布局样式 */
+        .diary-metadata {
+          background-color: var(--surface-accent);
+          border-radius: var(--radius-medium);
+          padding: 1rem;
+          border: 1px solid var(--surface-dark);
+        }
+
+        .metadata-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 1rem;
+        }
+
+        .environment-row {
+          display: flex;
+          align-items: center;
+          gap: 1.5rem;
+          margin-top: 0.75rem;
+          padding-top: 0.75rem;
+          border-top: 1px solid var(--surface-dark);
+          flex-wrap: wrap;
+        }
+
+        .meta-group {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          flex-shrink: 0;
         }
 
         .meta-item {
           display: flex;
           align-items: center;
-          gap: 0.5rem;
+          gap: 0.25rem;
         }
 
-        .meta-label {
-          font-size: var(--font-size-body);
+        .meta-icon {
+          font-size: 1rem;
+          opacity: 0.8;
+        }
+
+        .meta-text {
+          font-size: 0.875rem;
           color: var(--text-secondary);
           font-weight: 500;
         }
 
-        .meta-value {
-          font-size: var(--font-size-body);
-          color: var(--text-primary);
+        .location-text {
+          max-width: 200px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
-        .tag-score-row {
-          display: flex;
-          gap: 2rem;
-          align-items: flex-start;
-        }
-
-        .tag-section,
-        .score-section {
-          flex: 1;
-        }
-
-        .tag-display,
-        .score-display {
+        .tag-badge,
+        .score-badge {
           display: inline-block;
-          padding: 0.5rem 1rem;
-          background-color: var(--surface-accent);
+          padding: 0.25rem 0.75rem;
+          background-color: var(--primary-light);
           color: var(--text-primary);
-          border-radius: var(--radius-small);
-          font-size: var(--font-size-body);
+          border-radius: 12px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          letter-spacing: 0.025em;
         }
 
-        .score-slider {
-          width: 100%;
-          height: 6px;
-          border-radius: 3px;
+        .score-badge {
+          background-color: var(--surface-light);
+          border: 1px solid var(--surface-dark);
+        }
+
+        .compact-tag-select {
+          padding: 0.25rem 0.5rem;
+          border: 1px solid var(--surface-dark);
+          border-radius: 8px;
+          font-size: 0.75rem;
+          background-color: var(--surface-light);
+          color: var(--text-primary);
+          min-width: 120px;
+        }
+
+        .score-editor {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .compact-score-slider {
+          width: 80px;
+          height: 4px;
+          border-radius: 2px;
           background: var(--surface-dark);
           outline: none;
           -webkit-appearance: none;
         }
 
-        .score-slider::-webkit-slider-thumb {
+        .compact-score-slider::-webkit-slider-thumb {
           -webkit-appearance: none;
           appearance: none;
-          width: 20px;
-          height: 20px;
+          width: 16px;
+          height: 16px;
           border-radius: 50%;
           background: var(--primary-base);
           cursor: pointer;
+        }
+
+        .score-value {
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: var(--text-primary);
+          min-width: 20px;
         }
 
         .message {
@@ -700,14 +816,39 @@ export default function DiaryDetailModal({
             margin: 0.5rem;
           }
           
-          .diary-meta {
+          .metadata-row {
             flex-direction: column;
-            gap: 1rem;
+            align-items: flex-start;
+            gap: 0.75rem;
           }
-          
-          .tag-score-row {
+
+          .meta-group {
+            justify-content: flex-start;
+            width: 100%;
+          }
+
+          .environment-row {
             flex-direction: column;
-            gap: 1rem;
+            align-items: flex-start;
+            gap: 0.5rem;
+          }
+
+          .location-text {
+            max-width: 100%;
+          }
+
+          .content-header {
+            padding: 0.75rem 1rem;
+          }
+
+          .content-title {
+            font-size: 1rem;
+          }
+
+          .content-display,
+          .content-editor {
+            padding: 1rem;
+            font-size: 0.9rem;
           }
           
           .modal-footer {
