@@ -23,7 +23,18 @@ export default function DiaryDetailModal({
   const [editedDiary, setEditedDiary] = useState<DiaryEntry | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isMinting, setIsMinting] = useState(false);
+  const [mintingProgress, setMintingProgress] = useState<string>('');
+  const [mintingTimer, setMintingTimer] = useState<number>(0);
+  const [message, setMessage] = useState<{ 
+    type: 'success' | 'error'; 
+    text: string;
+    data?: {
+      imageUrl?: string;
+      ipfsCid?: string;
+      gatewayUrl?: string;
+    }
+  } | null>(null);
 
   // 当弹窗打开时，初始化编辑状态
   useEffect(() => {
@@ -169,6 +180,96 @@ export default function DiaryDetailModal({
     }
   };
 
+  // 铸造日记为NFT
+  const handleMint = async () => {
+    if (!diary) return;
+
+    setIsMinting(true);
+    setMessage(null);
+    setMintingProgress('');
+    setMintingTimer(0);
+
+    // 启动计时器
+    const timerInterval = setInterval(() => {
+      setMintingTimer(prev => prev + 1);
+    }, 1000);
+
+    try {
+      console.log('🎯 开始铸造日记NFT:', diary.id);
+      
+      setMintingProgress('🎨 正在生成AI图片（预计2-4分钟）...');
+      
+      // 调用后端API进行铸造
+      const response = await fetch('/api/mint-nft', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          diaryId: diary.id,
+          title: diary.title,
+          content: diary.content,
+          userId: userId,
+        }),
+      });
+
+      setMintingProgress('☁️ 正在上传到IPFS（预计1-2分钟）...');
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.status === 'success') {
+        console.log('🎉 铸造成功:', result.data);
+        
+        clearInterval(timerInterval);
+        setMintingProgress(`✅ 铸造完成！(用时${Math.floor(mintingTimer / 60)}分${mintingTimer % 60}秒)`);
+        
+        // 设置包含链接数据的成功消息
+        setMessage({ 
+          type: 'success', 
+          text: '🎉 日记铸造成功！NFT已生成并上传到IPFS。',
+          data: result.data
+        });
+        
+        // 8秒后自动清除进度信息
+        setTimeout(() => {
+          setMintingProgress('');
+          setMintingTimer(0);
+        }, 8000);
+        
+      } else {
+        throw new Error(result.message || '铸造失败');
+      }
+      
+    } catch (error) {
+      console.error('❌ 铸造日记失败:', error);
+      clearInterval(timerInterval);
+      
+      let errorMessage = '铸造失败，请重试';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('fetch') || error.message.includes('network')) {
+          errorMessage = '网络连接失败，请检查网络后重试';
+        } else if (error.message.includes('timeout') || error.message.includes('超时')) {
+          errorMessage = 'AI生成超时，请稍后重试（大模型生成需要较长时间）';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      setMessage({ type: 'error', text: errorMessage });
+      setMintingProgress('');
+      setMintingTimer(0);
+    } finally {
+      setIsMinting(false);
+      clearInterval(timerInterval);
+    }
+  };
+
   // 处理输入变化
   const handleInputChange = (field: keyof DiaryEntry, value: string | number) => {
     if (!editedDiary) return;
@@ -210,7 +311,68 @@ export default function DiaryDetailModal({
           {/* 消息提示 */}
           {message && (
             <div className={`message ${message.type} mb-4`}>
-              <span>{message.text}</span>
+              <div className="message-content">
+                <div className="message-line">
+                  {message.text}
+                </div>
+                
+                {/* 如果是成功消息且有数据，显示可点击链接 */}
+                {message.type === 'success' && message.data && (
+                  <div className="mt-3 space-y-2">
+                    {message.data.ipfsCid && message.data.ipfsCid !== 'fallback-mode' && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">📄 IPFS CID:</span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(message.data!.ipfsCid!);
+                            // 临时显示复制成功提示
+                            const originalText = message.text;
+                            setMessage({
+                              ...message,
+                              text: originalText + '\n✅ CID已复制到剪贴板！'
+                            });
+                            setTimeout(() => {
+                              setMessage({
+                                ...message,
+                                text: originalText
+                              });
+                            }, 2000);
+                          }}
+                          className="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded font-mono text-blue-600 hover:text-blue-800 transition-colors"
+                          title="点击复制CID"
+                        >
+                          {message.data.ipfsCid}
+                        </button>
+                      </div>
+                    )}
+                    
+                    {message.data.gatewayUrl && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">🌐 查看图片:</span>
+                        <a
+                          href={message.data.gatewayUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs bg-blue-100 hover:bg-blue-200 px-2 py-1 rounded text-blue-600 hover:text-blue-800 transition-colors underline"
+                        >
+                          打开图片链接
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {/* 对于其他消息类型，保持原有的文本分行显示 */}
+                {(message.type === 'error' || !message.data) && message.text.includes('\n') && (
+                  <div className="mt-2">
+                    {message.text.split('\n').slice(1).map((line, index) => (
+                      <div key={index} className="message-line text-sm">
+                        {line}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               <button onClick={() => setMessage(null)} className="message-close">✕</button>
             </div>
           )}
@@ -364,6 +526,15 @@ export default function DiaryDetailModal({
             <>
               <button onClick={handleDelete} className="button-danger" disabled={isDeleting}>
                 {isDeleting ? '删除中...' : '🗑️ 删除'}
+              </button>
+              <button onClick={handleMint} className="button-mint" disabled={isMinting}>
+                {isMinting 
+                  ? (mintingProgress 
+                    ? `${mintingProgress} (${Math.floor(mintingTimer / 60)}:${(mintingTimer % 60).toString().padStart(2, '0')})` 
+                    : '铸造中...'
+                  ) 
+                  : '⛏️ 铸造NFT'
+                }
               </button>
               <button onClick={handleEdit} className="button-secondary">
                 ✏️ 编辑
@@ -673,10 +844,24 @@ export default function DiaryDetailModal({
         .message {
           display: flex;
           justify-content: space-between;
-          align-items: center;
+          align-items: flex-start;
           padding: 0.75rem;
           border-radius: var(--radius-small);
           font-size: var(--font-size-body);
+        }
+
+        .message-content {
+          flex: 1;
+          padding-right: 0.5rem;
+        }
+
+        .message-line {
+          margin-bottom: 0.25rem;
+          word-break: break-all;
+        }
+
+        .message-line:last-child {
+          margin-bottom: 0;
         }
 
         .message.success {
@@ -697,8 +882,9 @@ export default function DiaryDetailModal({
           cursor: pointer;
           font-size: 1rem;
           padding: 0;
-          margin-left: 0.5rem;
           opacity: 0.7;
+          flex-shrink: 0;
+          align-self: flex-start;
         }
 
         .modal-footer {
@@ -711,7 +897,8 @@ export default function DiaryDetailModal({
 
         .button-primary,
         .button-secondary,
-        .button-danger {
+        .button-danger,
+        .button-mint {
           padding: 0.75rem 1.5rem;
           border-radius: var(--radius-small);
           font-size: var(--font-size-body);
@@ -749,9 +936,21 @@ export default function DiaryDetailModal({
           background-color: #dc2626;
         }
 
+        .button-mint {
+          background: linear-gradient(135deg, #6366f1, #8b5cf6);
+          color: white;
+        }
+
+        .button-mint:hover:not(:disabled) {
+          background: linear-gradient(135deg, #4f46e5, #7c3aed);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
         .button-primary:disabled,
         .button-secondary:disabled,
-        .button-danger:disabled {
+        .button-danger:disabled,
+        .button-mint:disabled {
           opacity: 0.6;
           cursor: not-allowed;
         }
@@ -858,7 +1057,8 @@ export default function DiaryDetailModal({
           
           .button-primary,
           .button-secondary,
-          .button-danger {
+          .button-danger,
+          .button-mint {
             flex: 1;
             min-width: 120px;
           }
