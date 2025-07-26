@@ -35,7 +35,7 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
   const [recordingTime, setRecordingTime] = useState(0);
   
   // 录音时间限制（秒）
-  const RECORDING_TIME_LIMIT = 100;
+  const RECORDING_TIME_LIMIT = 60;
   
   // 录音相关refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);

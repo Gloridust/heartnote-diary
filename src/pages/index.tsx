@@ -172,7 +172,7 @@ export default function Home() {
       console.log('👋 初始化对话，添加欢迎消息');
       const welcomeMessage: Message = {
         id: Date.now(),
-        content: '你好！我是信语，你的AI日记助手。今天过得怎么样？有什么想要分享的吗？',
+        content: '你好！我是你的AI日记助手。今天过得怎么样？有什么想要分享的吗？',
         isUser: false,
         timestamp: new Date().toLocaleTimeString('zh-CN', { 
           hour: '2-digit', 

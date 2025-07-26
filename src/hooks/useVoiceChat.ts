@@ -92,7 +92,7 @@ export function useVoiceChat(): VoiceChatState & VoiceChatActions {
       if (messages.length === 0) {
         const welcomeMessage: VoiceMessage = {
           id: Date.now(),
-          content: '你好！我是信语，你的AI日记助手。今天过得怎么样？有什么想要分享的吗？',
+          content: '你好！我是你的AI日记助手。今天过得怎么样？有什么想要分享的吗？',
           isUser: false,
           timestamp: Date.now()
         };
