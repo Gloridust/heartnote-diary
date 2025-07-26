@@ -437,7 +437,7 @@ export default function Profile() {
         </div>
 
         {/* 底部导航 */}
-        <nav className="fixed bottom-0 left-0 right-0">
+        <nav className="fixed bottom-0 left-0 right-0" style={{ marginBottom: "15px" }}>
           <div className="nav-bottom" style={{ height: "65px", padding: "10px 0" }}>
             <Link href="/" className="nav-item">
               <i>🏠</i>
