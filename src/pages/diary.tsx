@@ -595,7 +595,7 @@ export default function Diary() {
         <div className="nav-bottom">
           <Link href="/" className="nav-item">
             <i>🏠</i>
-            <span>首页</span>
+            <span>记录</span>
           </Link>
           <Link href="/diary" className="nav-item nav-item-active">
             <i>📖</i>
