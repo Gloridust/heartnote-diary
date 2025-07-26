@@ -438,10 +438,10 @@ export default function Profile() {
 
         {/* 底部导航 */}
         <nav className="fixed bottom-0 left-0 right-0">
-          <div className="nav-bottom">
+          <div className="nav-bottom" style={{ height: "65px", padding: "10px 0" }}>
             <Link href="/" className="nav-item">
               <i>🏠</i>
-              <span>首页</span>
+              <span>记录</span>
             </Link>
             <Link href="/diary" className="nav-item">
               <i>📖</i>
