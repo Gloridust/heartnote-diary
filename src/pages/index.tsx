@@ -396,9 +396,9 @@ export default function Home() {
           >
             <span style={{ color: 'var(--text-secondary)' }}>⚙️</span>
           </button>
-          <Link href="/diary" className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--surface-accent)' }}>
+          {/* <Link href="/diary" className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--surface-accent)' }}>
             <span style={{ color: 'var(--text-secondary)' }}>📖</span>
-          </Link>
+          </Link> */}
         </div>
       </header>
 
