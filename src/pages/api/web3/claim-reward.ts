@@ -5,7 +5,6 @@ import { supabase } from '../../../lib/supabase';
 // 简化的合约ABI，只包含需要的函数
 const REWARD_CONTRACT_ABI = [
   "function payDailyReward(address userAddress, uint256 dayId) external",
-  "function isRewardClaimed(address userAddress, uint8 rewardType, uint256 streakId) external view returns (bool)",
   "function getContractBalance() external view returns (uint256)",
   "function getRewardAmount(uint8 rewardType) external pure returns (uint256)",
   "function paused() external view returns (bool)"
@@ -112,7 +111,7 @@ export default async function handler(
 
     console.log('✅ 私钥格式验证通过');
 
-    // 检查用户是否已经存在于数据库
+    // 检查用户是否已经存在于数据库（验证是否为新用户）
     const { data: existingDiaries, error: checkError } = await supabase
       .from('diaries')
       .select('id')
@@ -138,6 +137,8 @@ export default async function handler(
         message: '您已经是老用户了，不符合新用户奖励条件'
       });
     }
+
+    console.log(`✅ 用户 ${userId} 验证通过，符合新用户奖励条件`);
 
     // 初始化Web3连接
     console.log('🔗 连接到Injective EVM测试网...');
@@ -191,24 +192,6 @@ export default async function handler(
       // 继续执行，因为某些合约可能没有paused函数
     }
 
-    // 检查是否已经领取过奖励 
-    // 对于新用户奖励，我们使用dayId=0作为唯一标识
-    try {
-      const newUserDayId = 0; // 新用户奖励的唯一标识
-      const alreadyClaimed = await rewardContract.isRewardClaimed(walletAddress, 0, newUserDayId);
-      if (alreadyClaimed) {
-        console.log(`ℹ️ 钱包 ${walletAddress} 已经领取过新用户奖励`);
-        return res.status(200).json({
-          success: true,
-          claimed: false,
-          message: '您已经领取过新用户奖励了'
-        });
-      }
-    } catch (claimCheckError) {
-      console.error('❌ 检查奖励领取状态失败:', claimCheckError);
-      // 继续执行，让合约在实际调用时处理重复领取的情况
-    }
-
     // 检查合约余额和奖励金额
     try {
       const contractBalance = await rewardContract.getContractBalance();
@@ -234,8 +217,15 @@ export default async function handler(
     // 发放奖励
     console.log(`🚀 开始发放奖励给钱包 ${walletAddress}...`);
     try {
-      const newUserDayId = 0; // 新用户奖励的唯一标识，与检查时保持一致
-      const tx = await rewardContract.payDailyReward(walletAddress, newUserDayId);
+      // 使用用户ID的哈希作为dayId，确保每个用户ID只能领取一次
+      // 而不是每个钱包地址只能领取一次
+      const userIdString = String(userId); // 确保userId是字符串
+      const userIdHash = ethers.keccak256(ethers.toUtf8Bytes(userIdString));
+      const dayId = BigInt(userIdHash) % BigInt(2**32); // 转换为uint256范围内的数字
+      
+      console.log(`📝 用户ID: ${userId}, 字符串: ${userIdString}, 对应的dayId: ${dayId.toString()}`);
+      
+      const tx = await rewardContract.payDailyReward(walletAddress, dayId);
       console.log(`📤 交易已发送: ${tx.hash}`);
       
       // 等待交易确认
@@ -258,15 +248,22 @@ export default async function handler(
     } catch (rewardError: unknown) {
       console.error('❌ 发放奖励时发生错误:', rewardError);
       
-      const errorObj = rewardError as { message?: string };
+      const errorObj = rewardError as { 
+        message?: string; 
+        data?: string; 
+        code?: string;
+        shortMessage?: string;
+      };
       
-      // 处理已经领取过的情况
-      if (errorObj.message?.includes('already claimed') || 
-          errorObj.message?.includes('Reward already claimed')) {
+      // 检查是否是RewardAlreadyClaimed错误 (0xb3f8c0dc)
+      if (errorObj.data === '0xb3f8c0dc' || 
+          errorObj.message?.includes('RewardAlreadyClaimed') ||
+          errorObj.shortMessage?.includes('custom error')) {
+        console.log(`ℹ️ 用户ID ${userId} 已经领取过新用户奖励`);
         return res.status(200).json({
           success: true,
           claimed: false,
-          message: '您已经领取过新用户奖励了'
+          message: '该用户ID已经领取过新用户奖励了'
         });
       }
       
