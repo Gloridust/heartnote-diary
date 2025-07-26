@@ -252,7 +252,7 @@ export default function Profile() {
   return (
     <>
       <Head>
-        <title>个人档案 - 声命体Memoirai</title>
+        <title>个人档案 - 声命体MemoirAI</title>
         <meta name="description" content="查看你的日记统计和心情趋势" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
       </Head>

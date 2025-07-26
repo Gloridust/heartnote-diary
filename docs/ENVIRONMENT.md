@@ -140,7 +140,7 @@ console.log('API Base URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
 
 ```bash
 # ===========================================
-# 声命体Memoirai应用环境变量配置
+# 声命体MemoirAI应用环境变量配置
 # ===========================================
 
 # Supabase 数据库配置

@@ -5,8 +5,8 @@ export default function Document() {
     <Html lang="zh-CN">
       <Head>
         {/* 基础页面信息 */}
-        <meta name="application-name" content="声命体Memoirai" />
-        <meta name="apple-mobile-web-app-title" content="声命体Memoirai" />
+        <meta name="application-name" content="声命体MemoirAI" />
+        <meta name="apple-mobile-web-app-title" content="声命体MemoirAI" />
         
         {/* PWA配置 */}
         <link rel="manifest" href="/manifest.json" />
@@ -93,20 +93,20 @@ export default function Document() {
         <link rel="apple-touch-startup-image" media="screen and (device-width: 744px) and (device-height: 1133px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="splash_screens/8.3__iPad_Mini_portrait.png"/>
         
         {/* SEO Meta Tags */}
-        <meta name="description" content="声命体Memoirai - AI驱动的对话式日记应用，用语音记录生活点滴" />
+        <meta name="description" content="声命体MemoirAI - AI驱动的对话式日记应用，用语音记录生活点滴" />
         <meta name="keywords" content="日记,AI,语音,记录,生活,对话,智能" />
-        <meta name="author" content="声命体Memoirai" />
+        <meta name="author" content="声命体MemoirAI" />
         <meta name="robots" content="index, follow" />
         
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="声命体Memoirai" />
+        <meta property="og:title" content="声命体MemoirAI" />
         <meta property="og:description" content="AI驱动的对话式日记应用，用语音记录生活点滴" />
         <meta property="og:image" content="/favicon.png" />
         
         {/* Twitter */}
         <meta property="twitter:card" content="summary" />
-        <meta property="twitter:title" content="声命体Memoirai" />
+        <meta property="twitter:title" content="声命体MemoirAI" />
         <meta property="twitter:description" content="AI驱动的对话式日记应用，用语音记录生活点滴" />
         <meta property="twitter:image" content="/favicon.png" />
       </Head>
