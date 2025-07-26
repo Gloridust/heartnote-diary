@@ -34,6 +34,9 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
   const [isProcessing, setIsProcessing] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   
+  // 录音时间限制（秒）
+  const RECORDING_TIME_LIMIT = 100;
+  
   // 录音相关refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -47,7 +50,22 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
     
     if (isRecording && !isPaused) {
       interval = setInterval(() => {
-        setRecordingTime(prev => prev + 1);
+        setRecordingTime(prev => {
+          const newTime = prev + 1;
+          
+          // 检查是否达到时间限制
+          if (newTime >= RECORDING_TIME_LIMIT) {
+            console.log('⏰ 录音时间达到限制，自动停止录音');
+            // 延迟执行，避免在setState中调用其他状态更新
+            setTimeout(() => {
+              console.log('⏰ 录音时间达到限制，自动停止录音');
+              console.log('🔄 时间限制结束后将自动回到初始界面');
+              handleStopRecording();
+            }, 100);
+          }
+          
+          return newTime;
+        });
       }, 1000);
     } else {
       if (!isRecording) {
@@ -60,7 +78,7 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
         clearInterval(interval);
       }
     };
-  }, [isRecording, isPaused]);
+  }, [isRecording, isPaused, RECORDING_TIME_LIMIT]);
 
   // 处理录音开始
   const handleStartRecording = async () => {
@@ -204,7 +222,12 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
           setError('语音处理失败，请重试');
         } finally {
           setIsProcessing(false);
-          console.log('🔄 处理状态已重置');
+          // 重置所有状态，回到初始界面
+          console.log('🔄 重置所有录音状态，回到初始界面');
+          setIsConnected(false);
+          setIsPaused(false);
+          setRecordingTime(0);
+          onSessionEnd();
         }
       };
 
@@ -271,39 +294,51 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
     }
   };
 
-  // 暂停会话
+  // 暂停录音
   const handlePause = () => {
-    if (isRecording) {
-      handleStopRecording();
+    console.log('⏸️ 暂停录音...');
+    if (mediaRecorderRef.current && isRecording) {
+      console.log('⏸️ 正在暂停MediaRecorder...');
+      mediaRecorderRef.current.pause();
+      setIsPaused(true);
+      console.log('✅ 录音已暂停');
     }
-    setIsPaused(true);
   };
 
-  // 恢复会话
-  const handleResume = async () => {
-    if (isPaused) {
+  // 恢复录音
+  const handleResume = () => {
+    console.log('▶️ 恢复录音...');
+    if (mediaRecorderRef.current && isPaused) {
+      console.log('▶️ 正在恢复MediaRecorder...');
+      mediaRecorderRef.current.resume();
+      setIsPaused(false);
+      console.log('✅ 录音已恢复');
+      
       // 如果当前显示日记预览，清除它
       if (showDiaryPreview && onClearDiaryPreview) {
         console.log('🔄 用户选择继续对话，清除日记预览状态');
         onClearDiaryPreview();
       }
-      
-      setIsPaused(false);
-      await handleStartRecording();
     }
   };
 
   // 结束会话
   const handleEndSession = async () => {
     try {
+      console.log('🔚 结束录音会话...');
       if (isRecording) {
+        console.log('🛑 停止当前录音并处理音频');
         handleStopRecording();
+      } else {
+        // 如果当前处于暂停状态，直接结束并重置界面
+        console.log('📝 录音已暂停，直接结束会话并重置界面');
+        setIsConnected(false);
+        setIsPaused(false);
+        setRecordingTime(0); // 重置录音时间
+        onSessionEnd();
       }
-      setIsConnected(false);
-      setIsPaused(false);
-      onSessionEnd();
     } catch (error) {
-      console.error('Error ending session:', error);
+      console.error('❌ 结束会话错误:', error);
     }
   };
 
@@ -622,11 +657,18 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
         console.log('🛑 降级模式录音停止');
         try {
           await processAudioChunks();
+          console.log('✅ 降级模式音频处理完成');
         } catch (error) {
           console.error('❌ 降级模式音频处理错误:', error);
           setError('语音处理失败，请重试');
         } finally {
           setIsProcessing(false);
+          // 重置所有状态，回到初始界面
+          console.log('🔄 降级模式重置所有录音状态，回到初始界面');
+          setIsConnected(false);
+          setIsPaused(false);
+          setRecordingTime(0);
+          onSessionEnd();
         }
       };
 
@@ -653,6 +695,23 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // 格式化倒计时
+  const formatCountdown = (remainingSeconds: number) => {
+    const mins = Math.floor(remainingSeconds / 60);
+    const secs = remainingSeconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // 计算剩余时间
+  const getRemainingTime = () => {
+    return Math.max(0, RECORDING_TIME_LIMIT - recordingTime);
+  };
+
+  // 判断是否即将结束（最后10秒）
+  const isNearEnd = () => {
+    return getRemainingTime() <= 10 && getRemainingTime() > 0;
   };
 
   // 清理effect
@@ -892,20 +951,47 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
           /* 已连接状态 - 显示控制界面 */
           <div className="flex flex-col space-y-4">
             {/* 录音状态指示 */}
-            <div className="flex items-center justify-center space-x-4">
-              <div className={`recording-indicator ${isRecording && !isPaused ? 'active' : ''}`} 
-                   style={{
-                     width: '12px',
-                     height: '12px',
-                     borderRadius: '50%',
-                     backgroundColor: isRecording && !isPaused ? '#ef4444' : 'var(--text-tertiary)'
-                   }} />
-              <span className="text-subtitle" style={{ color: 'var(--text-primary)' }}>
-                {isProcessing ? '处理中...' : isPaused ? '已暂停' : isRecording ? '正在录音' : '等待中'}
-              </span>
-              <span className="text-body" style={{ color: 'var(--text-secondary)' }}>
-                {formatTime(recordingTime)}
-              </span>
+            <div className="flex flex-col items-center space-y-2">
+              {/* 倒计时显示 - 仅在录音时显示 */}
+              {(isRecording && !isPaused) && (
+                <div className="countdown-display" style={{
+                  backgroundColor: isNearEnd() ? '#fef2f2' : 'var(--surface-accent)',
+                  color: isNearEnd() ? '#dc2626' : 'var(--text-primary)',
+                  padding: '8px 16px',
+                  borderRadius: '20px',
+                  border: isNearEnd() ? '2px solid #fecaca' : '1px solid var(--surface-dark)',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  textAlign: 'center',
+                  minWidth: '100px',
+                  boxShadow: isNearEnd() ? '0 0 8px rgba(239, 68, 68, 0.3)' : '0 2px 4px rgba(0,0,0,0.1)',
+                  animation: isNearEnd() ? 'countdownPulse 1s infinite' : 'none'
+                }}>
+                  <div style={{ fontSize: '12px', opacity: 0.8 }}>
+                    {isNearEnd() ? '⚠️ 即将结束' : '⏱️ 剩余时间'}
+                  </div>
+                  <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
+                    {formatCountdown(getRemainingTime())}
+                  </div>
+                </div>
+              )}
+              
+              {/* 录音状态指示 */}
+              <div className="flex items-center justify-center space-x-4">
+                <div className={`recording-indicator ${isRecording && !isPaused ? 'active' : ''}`} 
+                     style={{
+                       width: '12px',
+                       height: '12px',
+                       borderRadius: '50%',
+                       backgroundColor: isRecording && !isPaused ? '#ef4444' : 'var(--text-tertiary)'
+                     }} />
+                <span className="text-subtitle" style={{ color: 'var(--text-primary)' }}>
+                  {isProcessing ? '处理中...' : isPaused ? '已暂停' : isRecording ? '正在录音' : '等待中'}
+                </span>
+                <span className="text-body" style={{ color: 'var(--text-secondary)' }}>
+                  {formatTime(recordingTime)}
+                </span>
+              </div>
             </div>
 
             {/* 控制按钮组 */}
@@ -964,42 +1050,24 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
               </button>
             </div>
 
-            {/* 对话操作按钮 */}
-            {hasMessages && isPaused && !showDiaryPreview && (
-              <div className="flex justify-center space-x-3">
-                {onGenerateDiary && (
-                  <button
-                    onClick={() => onGenerateDiary?.()}
-                    className="diary-action-button"
-                    style={{
-                      backgroundColor: 'var(--primary-base)',
-                      color: 'var(--text-inverse)',
-                      border: 'none',
-                      borderRadius: '20px',
-                      padding: '8px 16px',
-                      cursor: 'pointer',
-                      fontSize: 'var(--font-size-body)',
-                      fontWeight: '500'
-                    }}
-                  >
-                    生成日记
-                  </button>
-                )}
+            {/* 暂停状态下的操作按钮 - 只保留继续录音 */}
+            {isPaused && !showDiaryPreview && (
+              <div className="flex justify-center">
                 <button
                   onClick={handleResume}
                   className="diary-action-button"
                   style={{
-                    backgroundColor: 'var(--surface-accent)',
-                    color: 'var(--text-primary)',
+                    backgroundColor: 'var(--primary-base)',
+                    color: 'var(--text-inverse)',
                     border: 'none',
                     borderRadius: '20px',
-                    padding: '8px 16px',
+                    padding: '10px 20px',
                     cursor: 'pointer',
                     fontSize: 'var(--font-size-body)',
                     fontWeight: '500'
                   }}
                 >
-                  继续对话
+                  ▶️ 继续录音
                 </button>
               </div>
             )}
@@ -1049,10 +1117,19 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
             {/* 提示文本 */}
             <div className="text-center">
               <p className="text-body" style={{ color: 'var(--text-secondary)' }}>
-                {isPaused 
-                  ? hasMessages ? '选择生成日记或继续对话' : '对话已暂停，可以继续录音'
-                  : '正在与AI对话中...'}
+                {isProcessing 
+                  ? '正在处理语音...'
+                  : isPaused 
+                    ? '录音已暂停，点击继续录音'
+                    : isRecording 
+                      ? '正在录音中...'
+                      : '等待中'}
               </p>
+              {isRecording && !isPaused && !isProcessing && (
+                <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>
+                  录音将在 {Math.floor(RECORDING_TIME_LIMIT / 60)} 分 {RECORDING_TIME_LIMIT % 60} 秒后自动结束
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -1099,6 +1176,21 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
           }
           100% {
             box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+          }
+        }
+
+        @keyframes countdownPulse {
+          0% {
+            transform: scale(1);
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+          }
+          50% {
+            transform: scale(1.05);
+            box-shadow: 0 0 12px rgba(239, 68, 68, 0.5);
+          }
+          100% {
+            transform: scale(1);
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
           }
         }
 
@@ -1212,6 +1304,20 @@ export default function VoiceInput({ onNewMessages, onInitConversation, onSessio
           
           .quick-end-bubble {
             margin-bottom: 12px;
+          }
+
+          .countdown-display {
+            padding: 6px 12px !important;
+            font-size: 14px !important;
+            min-width: 80px !important;
+          }
+
+          .countdown-display div:first-child {
+            font-size: 10px !important;
+          }
+
+          .countdown-display div:last-child {
+            font-size: 16px !important;
           }
         }
       `}</style>

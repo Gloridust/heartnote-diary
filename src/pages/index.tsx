@@ -255,28 +255,10 @@ export default function Home() {
       setShowDiaryPreview(true); // 显示预览卡片，不切换界面
       // 保持语音面板可用，用户可以继续修改
     } else {
-      // 手动生成日记的后备内容 - 完整页面显示
-      diaryContent = `今天是充实而美好的一天。上午，我在常去的咖啡厅工作，他们的拿铁依然是我的最爱，专注的工作让我顺利完成了一个重要项目，这种成就感真的很棒！
-
-下午，我决定去公园散步放松一下。春天的公园里樱花盛开，粉色的花瓣随风飘落，美得像一幅画。我拍了很多照片，还遇到了一只活泼可爱的柯基犬，看它短腿欢快地跑来跑去，心情顿时明朗了许多。
-
-晚上和朋友们在一家新开的泰国餐厅聚餐。菜品的口味很地道，我们边吃边聊，还计划了下个月的旅行，期待着和朋友们一起创造更多美好的回忆！`;
-      
-      const diary: DiaryEntry = {
-        id: Date.now(),
-        date: new Date().toLocaleDateString('zh-CN'),
-        title: diaryTitle,
-        content: diaryContent,
-        time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-        generated: true,
-        score: moodScore,
-        tag: diaryTag
-      };
-      
-      console.log('📋 生成的完整日记对象:', diary);
-      setDiaryEntry(diary);
-      setShowDiary(true);
-      setShowVoiceInput(false); // 完整日记页面时隐藏语音面板
+      // 手动生成日记的fallback - 显示提示信息
+      console.log('⚠️ 手动生成日记功能暂未实现，请使用语音对话生成日记');
+      alert('请先通过语音对话再生成日记');
+      return;
     }
   };
 
@@ -434,7 +416,7 @@ export default function Home() {
           locationWeatherData={locationWeatherData}
           aiChatHistory={aiChatHistory}
           onUpdateAiChatHistory={setAiChatHistory}
-        />
+            />
       )}
 
       {showDiary ? (
@@ -643,14 +625,14 @@ export default function Home() {
       <ConversationRestoreNotice 
         show={showRestoreNotice} 
         messageCount={messages.length} 
-      />
+          />
 
       {/* PWA安装提示 */}
       <PWAInstallPrompt />
 
       {/* PWA状态显示 */}
       <PWAStatus />
-      </div>
+    </div>
     </>
   );
 }

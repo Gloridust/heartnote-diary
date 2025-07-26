@@ -137,7 +137,90 @@ yarn dev
 - `getUserSettings()`: 获取用户设置
 - `updateUserSettings()`: 更新用户设置
 
-## 🎨 设计理念
+## 🎨 UI设计配色标准
+
+### 主色调 (Primary Colors)
+```css
+--primary-base: #B19CD9;    /* 主紫色 - 按钮、链接、强调元素 */
+--primary-light: #D4C7E8;  /* 浅紫色 - 悬浮状态、辅助背景 */
+--primary-dark: #9B7FC7;   /* 深紫色 - 按下状态、深色强调 */
+```
+
+### 背景颜色 (Background Colors)
+```css
+--background-page: #F7F7EC;   /* 页面主背景 - 温暖的米色 */
+--surface-main: #FFFFF4;      /* 卡片主背景 - 奶白色 */
+--surface-light: rgba(255, 255, 255, 0.901961); /* 半透明背景 */
+--surface-dark: #D6D6C2;      /* 边框、分割线 - 浅灰绿 */
+--surface-accent: #E8E0F7;    /* 强调背景 - 极浅紫色 */
+```
+
+### 文字颜色 (Text Colors)
+```css
+--text-primary: #000000;     /* 主要文字 - 纯黑 */
+--text-secondary: #808080;   /* 次要文字 - 中灰 */
+--text-tertiary: #999999;    /* 辅助文字 - 浅灰 */
+--text-inverse: #FFFFFF;     /* 反色文字 - 纯白 */
+```
+
+### 深色模式适配 (Dark Mode)
+```css
+/* 深色模式下的颜色调整 */
+--background-page: #121212;  /* 深色页面背景 */
+--surface-main: #1e1e1e;     /* 深色卡片背景 */
+--surface-dark: #2a2a2a;     /* 深色边框 */
+--surface-accent: #2d2d3a;   /* 深色强调背景 */
+--text-primary: #ffffff;     /* 深色模式主文字 */
+--text-secondary: #b3b3b3;   /* 深色模式次要文字 */
+--text-tertiary: #808080;    /* 深色模式辅助文字 */
+--primary-base: #C4A3E8;     /* 深色模式下略亮的主紫色 */
+```
+
+### 心情可视化配色 (Mood Visualization)
+```css
+/* 心情评分对应的颜色系统 */
+--mood-very-happy: #22C55E;  /* 非常开心 (8-10分) - 绿色 */
+--mood-happy: #3B82F6;       /* 愉快 (6-7分) - 蓝色 */
+--mood-neutral: #A855F7;     /* 平静 (4-5分) - 紫色 */
+--mood-sad: #F97316;         /* 低落 (2-3分) - 橙色 */
+--mood-very-sad: #EF4444;    /* 难过 (0-1分) - 红色 */
+```
+
+### 设计原则
+
+1. **温暖友好**: 采用温暖的米色背景配合柔和的紫色主色调，营造亲近感
+2. **层次分明**: 通过不同深浅的颜色建立清晰的视觉层次
+3. **对比适度**: 确保文字在各种背景上都有足够的对比度，保证可读性
+4. **情感表达**: 心情可视化采用直观的颜色语言，绿色代表积极，红色代表消极
+5. **适配性强**: 支持明暗模式自动切换，在不同环境下都有良好的视觉体验
+6. **品牌一致**: 紫色系贯穿整个设计，建立统一的品牌视觉识别
+
+### 字体规范 (Typography)
+```css
+--font-size-caption: 10px;   /* 说明文字 */
+--font-size-body: 12px;      /* 正文内容 */
+--font-size-subtitle: 14px;  /* 副标题 */
+--font-size-title: 20px;     /* 页面标题 */
+--font-size-heading: 30px;   /* 大标题 */
+--font-size-display: 40px;   /* 展示标题 */
+```
+
+### 间距规范 (Spacing)
+```css
+--spacing-tight: 8px;        /* 紧密间距 */
+--spacing-compact: 12px;     /* 紧凑间距 */
+--spacing-standard: 16px;    /* 标准间距 */
+--spacing-comfortable: 24px; /* 舒适间距 */
+```
+
+### 圆角规范 (Border Radius)
+```css
+--radius-small: 12px;        /* 小圆角 - 按钮、标签 */
+--radius-medium: 16px;       /* 中圆角 - 卡片、面板 */
+--radius-full: 50%;          /* 全圆角 - 头像、圆形按钮 */
+```
+
+## 🎯 设计理念
 
 - **温暖友好**: 紫色主题营造温馨的记录氛围
 - **对话式交互**: 降低日记书写门槛，让记录变得自然
