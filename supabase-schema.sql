@@ -1,4 +1,4 @@
--- 信语日记应用数据库结构
+-- 声命体Memoirai应用数据库结构
 -- 在 Supabase SQL Editor 中执行此脚本
 
 -- 创建用户表

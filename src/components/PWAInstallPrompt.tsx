@@ -97,7 +97,7 @@ export default function PWAInstallPrompt() {
         <div className="prompt-content">
           <div className="prompt-icon">📱</div>
           <div className="prompt-text">
-            <h3>安装信语日记</h3>
+            <h3>安装声命体Memoirai</h3>
             <p>添加到主屏幕以获得更好的体验</p>
             <div className="ios-steps">
               <span>点击</span>
@@ -191,7 +191,7 @@ export default function PWAInstallPrompt() {
         <div className="prompt-content">
           <div className="prompt-icon">📱</div>
           <div className="prompt-text">
-            <h3>安装信语日记</h3>
+            <h3>安装声命体Memoirai</h3>
             <p>安装应用以获得更好的体验</p>
           </div>
           <div className="prompt-actions">

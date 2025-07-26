@@ -149,7 +149,7 @@ export default function TestAudio() {
   return (
     <>
       <Head>
-        <title>音频测试 - 信语日记</title>
+        <title>音频测试 - 声命体Memoirai</title>
         <meta name="description" content="诊断音频和位置天气功能" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
       </Head>

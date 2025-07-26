@@ -336,7 +336,7 @@ export default function Diary() {
   return (
     <>
       <Head>
-        <title>日记本 - 信语日记</title>
+        <title>日记本 - 声命体Memoirai</title>
         <meta name="description" content="浏览和管理你的日记记录" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
       </Head>

@@ -1,4 +1,4 @@
-# 信语日记 (Heartnote Diary)
+# 声命体Memoirai (Heartnote Diary)
 
 一个基于LLM驱动的对话式日记应用，通过与AI伙伴的自然对话，帮助用户记录每天的生活点滴，自动生成温暖而个性化的日记内容。
 

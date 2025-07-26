@@ -346,8 +346,8 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>信语日记 - AI驱动的对话式日记应用</title>
-        <meta name="description" content="信语日记 - AI驱动的对话式日记应用，用语音记录生活点滴" />
+        <title>声命体Memoirai - AI驱动的对话式日记应用</title>
+        <meta name="description" content="声命体Memoirai - AI驱动的对话式日记应用，用语音记录生活点滴" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
       </Head>
       <div style={{ backgroundColor: 'var(--background-page)' }} className="min-h-screen pb-20">
@@ -357,7 +357,7 @@ export default function Home() {
           {/* <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--primary-base)' }}>
             <span style={{ color: 'var(--text-inverse)' }} className="text-lg">📔</span>
           </div> */}
-          <h1 className="text-title" style={{ color: 'var(--text-primary)' }}>信语日记</h1>
+          <h1 className="text-title" style={{ color: 'var(--text-primary)' }}>声命体Memoirai</h1>
         </div>
         <div className="flex items-center space-x-2">
           {/* 位置天气状态指示器 */}

@@ -1,4 +1,4 @@
-// 信语日记 PWA Service Worker
+// 声命体Memoirai PWA Service Worker
 const CACHE_NAME = 'heartnote-diary-v3';
 const STATIC_CACHE = 'static-v3';
 const RUNTIME_CACHE = 'runtime-v3';
