@@ -1,6 +1,6 @@
 {
   "name": "声命体MemoirAI - AI对话式日记应用",
-  "short_name": "声命体MemoirAI",
+  "short_name": "声命体",
   "description": "AI驱动的对话式日记应用，用语音记录生活点滴，智能生成日记内容",
   "start_url": "/",
   "display": "standalone",
