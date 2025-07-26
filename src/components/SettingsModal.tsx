@@ -216,7 +216,7 @@ export default function SettingsModal({ isOpen, onClose, onUserIdChange }: Setti
               💰 钱包地址 (可选)
             </label>
             <p className="setting-description">
-              填写您的Injective EVM钱包地址，新用户可获得INJ原生代币奖励。支持MetaMask等钱包。
+              填写您的Injective EVM钱包地址，新用户可获得代币奖励。支持MetaMask等钱包。
             </p>
             
             <div className="input-group">
