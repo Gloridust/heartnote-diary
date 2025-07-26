@@ -19,6 +19,32 @@ export default function PWAInstallPrompt() {
   const isClient = useIsClient();
   const isStandalone = usePWAStatus();
 
+  // 检查是否在24小时内被关闭过
+  const wasDismissedRecently = () => {
+    if (!isClient) return false;
+    
+    try {
+      const dismissed = localStorage.getItem('pwa-install-dismissed');
+      if (!dismissed) {
+        console.log('🆕 没有关闭记录，可以显示');
+        return false;
+      }
+      
+      const dismissedTime = parseInt(dismissed);
+      const twentyFourHours = 24 * 60 * 60 * 1000;
+      const isRecent = (Date.now() - dismissedTime) < twentyFourHours;
+      console.log('📅 关闭记录检查:', { 
+        dismissedTime: new Date(dismissedTime).toLocaleString(),
+        isRecent,
+        hoursAgo: Math.round((Date.now() - dismissedTime) / (60 * 60 * 1000))
+      });
+      return isRecent;
+    } catch (error) {
+      console.warn('Failed to check install prompt dismissal:', error);
+      return false;
+    }
+  };
+
   useEffect(() => {
     if (!isClient) return;
 
@@ -56,12 +82,19 @@ export default function PWAInstallPrompt() {
 
     // iOS Safari需要特殊处理
     if (isiOSSafariApp && !isStandalone) {
+      console.log('📝 iOS Safari条件满足，准备显示安装引导');
       setTimeout(() => {
-        if (!wasDismissedRecently()) {
+        const wasDismissed = wasDismissedRecently();
+        console.log('🔍 检查关闭状态:', { wasDismissed });
+        if (!wasDismissed) {
           console.log('🍎 显示iOS Safari安装引导');
           setShowInstallPrompt(true);
+        } else {
+          console.log('⏰ 24小时内被关闭过，跳过显示');
         }
       }, 3000);
+    } else {
+      console.log('❌ iOS Safari条件不满足:', { isiOSSafariApp, isStandalone });
     }
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -96,25 +129,38 @@ export default function PWAInstallPrompt() {
     }
   };
 
-  // 检查是否在24小时内被关闭过
-  const wasDismissedRecently = () => {
-    if (!isClient) return false;
-    
-    try {
-      const dismissed = localStorage.getItem('pwa-install-dismissed');
-      if (!dismissed) return false;
-      
-      const dismissedTime = parseInt(dismissed);
-      const twentyFourHours = 24 * 60 * 60 * 1000;
-      return (Date.now() - dismissedTime) < twentyFourHours;
-    } catch (error) {
-      console.warn('Failed to check install prompt dismissal:', error);
-      return false;
-    }
-  };
 
-  // 如果已经是standalone模式或最近被关闭过，不显示提示
-  if (isStandalone || wasDismissedRecently()) {
+
+  // 调试：检查URL参数是否包含强制显示标志
+  const shouldForceShow = isClient && new URLSearchParams(window.location.search).get('debug_pwa') === 'true';
+  const shouldClearDismissal = isClient && new URLSearchParams(window.location.search).get('clear_pwa') === 'true';
+  
+  // 调试：清除关闭记录
+  useEffect(() => {
+    if (shouldClearDismissal && isClient) {
+      try {
+        localStorage.removeItem('pwa-install-dismissed');
+        console.log('🧹 已清除PWA安装提示关闭记录');
+        // 刷新页面以重新检测
+        window.location.href = window.location.pathname;
+      } catch (error) {
+        console.warn('清除记录失败:', error);
+      }
+    }
+  }, [shouldClearDismissal, isClient]);
+  
+  console.log('🔧 PWA安装提示调试信息:', {
+    isStandalone,
+    wasDismissedRecently: wasDismissedRecently(),
+    shouldForceShow,
+    showInstallPrompt,
+    isIOS,
+    isiOSSafari
+  });
+
+  // 如果已经是standalone模式或最近被关闭过，不显示提示（除非强制显示）
+  if (!shouldForceShow && (isStandalone || wasDismissedRecently())) {
+    console.log('🚫 跳过显示PWA安装提示:', { isStandalone, wasDismissedRecently: wasDismissedRecently() });
     return null;
   }
 
