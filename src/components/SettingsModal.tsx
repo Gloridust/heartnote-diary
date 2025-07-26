@@ -9,8 +9,10 @@ interface SettingsModalProps {
 
 export default function SettingsModal({ isOpen, onClose, onUserIdChange }: SettingsModalProps) {
   const [userId, setUserId] = useState<string>('');
+  const [walletAddress, setWalletAddress] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isClaimingReward, setIsClaimingReward] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
 
   // 加载当前用户ID
   useEffect(() => {
@@ -26,7 +28,13 @@ export default function SettingsModal({ isOpen, onClose, onUserIdChange }: Setti
     }
   }, [isOpen]);
 
-  // 保存用户ID
+  // 验证钱包地址格式
+  const isValidWalletAddress = (address: string): boolean => {
+    // 检查是否为有效的以太坊地址格式 (42字符，以0x开头)
+    return /^0x[a-fA-F0-9]{40}$/.test(address);
+  };
+
+  // 保存用户ID和钱包地址
   const handleSave = async () => {
     const userIdNum = parseInt(userId, 10);
     
@@ -40,14 +48,37 @@ export default function SettingsModal({ isOpen, onClose, onUserIdChange }: Setti
       return;
     }
 
+    // 验证钱包地址格式（如果填写了）
+    if (walletAddress.trim() && !isValidWalletAddress(walletAddress.trim())) {
+      setMessage({ type: 'error', text: '请输入有效的钱包地址格式 (0x开头的42位地址)' });
+      return;
+    }
+
     setIsLoading(true);
     try {
+      const currentUserId = UserStorage.getCurrentUserId();
+      const isNewUser = !currentUserId || currentUserId !== userIdNum;
+      
+      // 保存用户ID
       UserStorage.setUserId(userIdNum);
-      setMessage({ type: 'success', text: '用户ID保存成功！' });
+      
+      // 保存钱包地址到localStorage
+      if (walletAddress.trim()) {
+        localStorage.setItem('wallet_address', walletAddress.trim());
+      } else {
+        localStorage.removeItem('wallet_address');
+      }
       
       // 通知父组件用户ID已改变
       if (onUserIdChange) {
         onUserIdChange(userIdNum);
+      }
+      
+      setMessage({ type: 'success', text: '设置保存成功！' });
+      
+      // 如果是新用户且填写了钱包地址，尝试发放奖励
+      if (isNewUser && walletAddress.trim()) {
+        await handleClaimNewUserReward(userIdNum, walletAddress.trim());
       }
       
       // 2秒后关闭弹窗
@@ -57,10 +88,59 @@ export default function SettingsModal({ isOpen, onClose, onUserIdChange }: Setti
       }, 2000);
       
     } catch (error) {
-      console.error('保存用户ID失败:', error);
+      console.error('保存设置失败:', error);
       setMessage({ type: 'error', text: '保存失败，请重试' });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // 处理新用户奖励发放
+  const handleClaimNewUserReward = async (userId: number, walletAddr: string) => {
+    setIsClaimingReward(true);
+    try {
+      console.log('🎁 检查新用户奖励资格...');
+      
+      const response = await fetch('/api/web3/claim-reward', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          walletAddress: walletAddr
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        if (result.claimed) {
+          setMessage({ 
+            type: 'success', 
+            text: `🎉 恭喜！您获得了新用户奖励！\n交易哈希: ${result.txHash?.slice(0, 10)}...` 
+          });
+        } else {
+          setMessage({ 
+            type: 'info', 
+            text: result.message || '您已经领取过新用户奖励了' 
+          });
+        }
+      } else {
+        console.warn('新用户奖励发放失败:', result.message);
+        setMessage({ 
+          type: 'error', 
+          text: `奖励发放失败: ${result.message}` 
+        });
+      }
+    } catch (error) {
+      console.error('新用户奖励发放错误:', error);
+      setMessage({ 
+        type: 'error', 
+        text: '奖励发放失败，请稍后重试' 
+      });
+    } finally {
+      setIsClaimingReward(false);
     }
   };
 
@@ -124,8 +204,36 @@ export default function SettingsModal({ isOpen, onClose, onUserIdChange }: Setti
             {/* 提示信息 */}
             {message && (
               <div className={`message ${message.type}`}>
-                <span>{message.text}</span>
+                <span style={{ whiteSpace: 'pre-line' }}>{message.text}</span>
                 <button onClick={clearMessage} className="message-close">✕</button>
+              </div>
+            )}
+          </div>
+
+          {/* 钱包地址设置 */}
+          <div className="setting-section">
+            <label className="setting-label">
+              💰 钱包地址 (可选)
+            </label>
+            <p className="setting-description">
+              填写您的Injective EVM钱包地址，新用户可获得INJ原生代币奖励。支持MetaMask等钱包。
+            </p>
+            
+            <div className="input-group">
+              <input
+                type="text"
+                value={walletAddress}
+                onChange={(e) => setWalletAddress(e.target.value)}
+                placeholder="0x..."
+                className="wallet-input"
+                disabled={isLoading || isClaimingReward}
+              />
+            </div>
+            
+            {isClaimingReward && (
+              <div className="claiming-status">
+                <span className="loading-spinner">⏳</span>
+                <span>正在检查奖励资格...</span>
               </div>
             )}
           </div>
@@ -138,6 +246,18 @@ export default function SettingsModal({ isOpen, onClose, onUserIdChange }: Setti
               <li>• 请记住您的用户ID，换设备时需要手动输入</li>
               <li>• 建议使用6位数字，方便记忆</li>
               <li>• 如果忘记ID，可以联系管理员恢复数据</li>
+            </ul>
+          </div>
+
+          {/* 奖励系统说明 */}
+          <div className="info-section">
+            <h3 className="info-title">🎁 新用户奖励</h3>
+            <ul className="info-list">
+              <li>• 首次设置用户ID并填写钱包地址可获得代币奖励</li>
+              <li>• 钱包地址必须是有效的以太坊格式 (0x开头42位)</li>
+              <li>• 支持Injective EVM测试网，建议使用MetaMask</li>
+              <li>• 每个用户只能领取一次新用户奖励</li>
+              <li>• 奖励将自动发送到您提供的钱包地址</li>
             </ul>
           </div>
         </div>
@@ -296,6 +416,28 @@ export default function SettingsModal({ isOpen, onClose, onUserIdChange }: Setti
           cursor: not-allowed;
         }
 
+        .wallet-input {
+          flex: 1;
+          padding: 0.75rem;
+          border: 1px solid var(--surface-dark);
+          border-radius: var(--radius-small);
+          font-size: var(--font-size-body);
+          background-color: var(--surface-light);
+          color: var(--text-primary);
+          transition: border-color 0.2s ease;
+        }
+
+        .wallet-input:focus {
+          outline: none;
+          border-color: var(--primary-base);
+          box-shadow: 0 0 0 2px rgba(177, 156, 217, 0.2);
+        }
+
+        .wallet-input:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
         .message {
           display: flex;
           justify-content: space-between;
@@ -330,6 +472,24 @@ export default function SettingsModal({ isOpen, onClose, onUserIdChange }: Setti
 
         .message-close:hover {
           opacity: 1;
+        }
+
+        .claiming-status {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin-top: 0.5rem;
+          color: var(--text-secondary);
+          font-size: var(--font-size-body);
+        }
+
+        .loading-spinner {
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
 
         .info-section {
@@ -431,6 +591,15 @@ export default function SettingsModal({ isOpen, onClose, onUserIdChange }: Setti
           
           .generate-button {
             border-color: rgba(255, 255, 255, 0.2);
+          }
+          
+          .wallet-input {
+            border-color: rgba(255, 255, 255, 0.2);
+          }
+          
+          .wallet-input:focus {
+            border-color: var(--primary-base);
+            box-shadow: 0 0 0 2px rgba(196, 163, 232, 0.2);
           }
           
           .button-secondary {
