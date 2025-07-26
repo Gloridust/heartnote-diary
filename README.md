@@ -58,6 +58,11 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 # OpenWeatherMap 天气API配置
 NEXT_PUBLIC_OPENWEATHER_API_KEY=your_openweather_api_key
 
+# Web3 奖励系统配置 (Injective EVM Testnet)
+WEB3_PRIVATE_KEY=your_wallet_private_key
+WEB3_RPC_URL=https://testnet.sentry.tm.injective.network:443
+WEB3_REWARD_CONTRACT_ADDRESS=your_reward_contract_address
+
 # 字节跳动语音识别API配置
 BYTEDANCE_APP_KEY=your_app_key_here
 BYTEDANCE_ACCESS_TOKEN=your_access_token_here
@@ -88,6 +93,22 @@ DOUBAO_ACCESS_KEY=your_access_key_here
 - **`BYTEDANCE_ACCESS_TOKEN`**: 字节跳动语音识别服务的访问令牌
 - **`ARK_API_KEY`**: 字节跳动大模型服务的API密钥
 - **`DOUBAO_MODEL`**: 使用的豆包模型名称
+
+#### Web3 奖励系统环境变量
+
+- **`WEB3_PRIVATE_KEY`**: 用于发放奖励的钱包私钥
+  - 格式: `0x` 开头的64位十六进制字符串
+  - ⚠️ 重要：这是私钥，绝对不能泄露，仅在服务器端使用
+  - 建议创建一个专门用于奖励发放的钱包
+- **`WEB3_RPC_URL`**: Injective EVM测试网RPC端点
+  - 默认值: `https://testnet.tm.injective.network`
+  - 或使用其他兼容的EVM RPC端点
+- **`WEB3_TOKEN_CONTRACT_ADDRESS`**: ERC20代币合约地址
+  - 格式: `0x` 开头的42位十六进制地址
+  - 部署在Injective EVM测试网上的代币合约
+- **`WEB3_REWARD_AMOUNT`**: 新用户奖励代币数量
+  - 格式: 纯数字字符串，如 `100`
+  - 这是代币的基础单位数量（会根据代币decimals自动换算）
 
 ### 4. 启动开发服务器
 
