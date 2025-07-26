@@ -197,7 +197,7 @@ export default function DiaryDetailModal({
     try {
       console.log('🎯 开始铸造日记NFT:', diary.id);
       
-      setMintingProgress('🎨 正在生成AI图片（预计2-4分钟）...');
+      setMintingProgress('🎨 正在生成AI图片(预计2分钟) ');
       
       // 调用后端API进行铸造
       const response = await fetch('/api/mint-nft', {
@@ -213,7 +213,7 @@ export default function DiaryDetailModal({
         }),
       });
 
-      setMintingProgress('☁️ 正在上传到IPFS（预计1-2分钟）...');
+      setMintingProgress('☁️ 正在上传到IPFS(预计1分钟)  ');
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
