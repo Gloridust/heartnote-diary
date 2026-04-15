@@ -1,0 +1,78 @@
+{% extends "admin/base.html" %}
+{% block body %}
+<div class="stats">
+  <div class="stat"><div class="v">{{ stats.total_users }}</div><div class="l">总用户数</div></div>
+  <div class="stat"><div class="v">{{ stats.active_users }}</div><div class="l">活跃</div></div>
+  <div class="stat"><div class="v">{{ stats.disabled_users }}</div><div class="l">已禁用</div></div>
+  <div class="stat"><div class="v">{{ stats.total_diaries }}</div><div class="l">总日记数</div></div>
+</div>
+
+<div class="card">
+  <div class="row" style="justify-content:space-between;margin-bottom:16px">
+    <form method="get" class="row">
+      <input name="q" value="{{ q }}" placeholder="搜索手机号 / 用户ID">
+      <button type="submit">搜索</button>
+      {% if q %}<a class="btn btn-secondary" href="{{ url_for('admin.dashboard') }}">清除</a>{% endif %}
+    </form>
+    <details>
+      <summary>+ 新建用户</summary>
+      <form method="post" action="{{ url_for('admin.create_user') }}" class="row" style="margin-top:12px">
+        <input name="phone" placeholder="手机号" required>
+        <input name="nickname" placeholder="昵称（可选）">
+        <input name="password" placeholder="初始密码（默认 123456）">
+        <button type="submit">创建</button>
+      </form>
+    </details>
+  </div>
+
+  <table>
+    <thead><tr>
+      <th>用户ID</th><th>手机号</th><th>昵称</th><th>状态</th>
+      <th>日记</th><th>注册时间</th><th>最近登录</th><th>操作</th>
+    </tr></thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td><strong>{{ u.id }}</strong></td>
+        <td>{{ u.phone }}</td>
+        <td>{{ u.nickname or '—' }}</td>
+        <td>
+          {% if u.status == 'active' %}
+            <span class="pill pill-active">活跃</span>
+          {% else %}
+            <span class="pill pill-disabled">已禁用</span>
+          {% endif %}
+        </td>
+        <td><a href="{{ url_for('admin.user_diaries', uid=u.id) }}">{{ u.diaries|length }} 篇</a></td>
+        <td style="color:var(--muted);font-size:12px">{{ u.created_at.strftime('%Y-%m-%d %H:%M') if u.created_at else '—' }}</td>
+        <td style="color:var(--muted);font-size:12px">{{ u.last_login_at.strftime('%Y-%m-%d %H:%M') if u.last_login_at else '—' }}</td>
+        <td>
+          <div class="row">
+            {% if u.status == 'active' %}
+              <form method="post" action="{{ url_for('admin.disable_user', uid=u.id) }}" class="inline">
+                <button class="btn-secondary" type="submit">禁用</button>
+              </form>
+            {% else %}
+              <form method="post" action="{{ url_for('admin.enable_user', uid=u.id) }}" class="inline">
+                <button type="submit">启用</button>
+              </form>
+            {% endif %}
+            <form method="post" action="{{ url_for('admin.reset_password', uid=u.id) }}" class="inline"
+                  onsubmit="this.querySelector('[name=new_password]').value=prompt('新密码（留空则重置为 123456）：','')||'123456'">
+              <input type="hidden" name="new_password">
+              <button class="btn-secondary" type="submit">重置密码</button>
+            </form>
+            <form method="post" action="{{ url_for('admin.delete_user', uid=u.id) }}" class="inline"
+                  onsubmit="return confirm('确认永久删除用户 {{ u.id }} 及其所有日记？')">
+              <button class="btn-danger" type="submit">删除</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:40px">暂无用户</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

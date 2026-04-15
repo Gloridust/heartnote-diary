@@ -1,0 +1,18 @@
+{% extends "admin/base.html" %}
+{% block body %}
+<div style="max-width:360px;margin:80px auto">
+  <div class="card">
+    <h2 style="margin:0 0 8px;font-size:20px">🌿 MemoirAI</h2>
+    <p style="margin:0 0 20px;color:var(--muted);font-size:13px">管理员登录</p>
+    <form method="post">
+      <div style="margin-bottom:12px">
+        <input name="username" placeholder="用户名" required style="width:100%">
+      </div>
+      <div style="margin-bottom:16px">
+        <input type="password" name="password" placeholder="密码" required style="width:100%">
+      </div>
+      <button type="submit" style="width:100%;padding:10px">登 录</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

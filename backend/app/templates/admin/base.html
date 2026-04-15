@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}MemoirAI 管理后台{% endblock %}</title>
+<style>
+  :root{
+    --bg:#f7f7ec; --surface:#fffff4; --accent:#e8e0f7;
+    --primary:#b19cd9; --primary-dark:#9b7fc7;
+    --text:#2d2a3a; --muted:#7a7788; --danger:#e57373; --success:#81c784;
+    --border:#ede8e0;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",sans-serif;background:var(--bg);color:var(--text)}
+  header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:var(--surface);border-bottom:1px solid var(--border)}
+  header h1{margin:0;font-size:18px;font-weight:600}
+  header nav a{margin-left:16px;color:var(--muted);text-decoration:none;font-size:14px}
+  header nav a:hover{color:var(--primary-dark)}
+  main{max-width:1200px;margin:24px auto;padding:0 24px}
+  .card{background:var(--surface);border-radius:16px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:20px}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+  .stat{background:var(--surface);border-radius:16px;padding:20px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+  .stat .v{font-size:28px;font-weight:600;color:var(--primary-dark)}
+  .stat .l{color:var(--muted);font-size:13px;margin-top:4px}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:12px;text-align:left;border-bottom:1px solid var(--border);font-size:14px}
+  th{color:var(--muted);font-weight:500;background:var(--accent)}
+  tr:hover td{background:#faf7f0}
+  button,.btn{border:none;border-radius:10px;padding:8px 14px;font-size:13px;cursor:pointer;background:var(--primary);color:#fff;transition:.15s}
+  button:hover,.btn:hover{background:var(--primary-dark)}
+  .btn-secondary{background:#e5e2f0;color:var(--text)}
+  .btn-secondary:hover{background:#d4cfe3}
+  .btn-danger{background:var(--danger)}
+  .btn-danger:hover{background:#d15757}
+  input,select{padding:8px 12px;border:1px solid var(--border);border-radius:10px;font-size:14px;background:#fff;font-family:inherit}
+  input:focus{outline:none;border-color:var(--primary)}
+  .flash{padding:12px 16px;border-radius:12px;margin-bottom:16px}
+  .flash-success{background:#e8f5e9;color:#2e7d32}
+  .flash-error{background:#ffebee;color:#c62828}
+  .pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:500}
+  .pill-active{background:#e8f5e9;color:#2e7d32}
+  .pill-disabled{background:#ffebee;color:#c62828}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  form.inline{display:inline}
+  details summary{cursor:pointer;color:var(--primary-dark);font-size:13px}
+  .diary-item{padding:12px;border-bottom:1px solid var(--border)}
+  .diary-item:last-child{border-bottom:none}
+  .diary-item .title{font-weight:600;margin-bottom:4px}
+  .diary-item .meta{color:var(--muted);font-size:12px;margin-bottom:8px}
+</style>
+</head>
+<body>
+{% if session.admin_id %}
+<header>
+  <h1>🌿 MemoirAI 管理后台</h1>
+  <nav>
+    <span style="color:var(--muted);font-size:13px">管理员：{{ session.admin_name }}</span>
+    <a href="{{ url_for('admin.dashboard') }}">用户管理</a>
+    <a href="{{ url_for('admin.logout') }}">退出</a>
+  </nav>
+</header>
+{% endif %}
+<main>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, msg in messages %}
+      <div class="flash flash-{{ category }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+  {% block body %}{% endblock %}
+</main>
+</body>
+</html>

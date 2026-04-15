@@ -1,0 +1,22 @@
+{% extends "admin/base.html" %}
+{% block body %}
+<div class="card">
+  <div class="row" style="justify-content:space-between;margin-bottom:12px">
+    <div>
+      <h3 style="margin:0">用户 {{ user.id }} 的日记</h3>
+      <p style="margin:4px 0 0;color:var(--muted);font-size:13px">{{ user.phone }} · 共 {{ diaries|length }} 篇</p>
+    </div>
+    <a class="btn btn-secondary" href="{{ url_for('admin.dashboard') }}">← 返回</a>
+  </div>
+
+  {% for d in diaries %}
+    <div class="diary-item">
+      <div class="title">{{ d.title }} {% if d.score %}<span style="color:var(--muted);font-weight:400;font-size:13px">· {{ d.score }}/10</span>{% endif %}</div>
+      <div class="meta">{{ d.date.strftime('%Y-%m-%d %H:%M') if d.date else '—' }}{% if d.tag %} · #{{ d.tag }}{% endif %}</div>
+      <div style="color:var(--text);font-size:14px;white-space:pre-wrap;line-height:1.6">{{ d.content }}</div>
+    </div>
+  {% else %}
+    <div style="text-align:center;color:var(--muted);padding:40px">该用户暂无日记</div>
+  {% endfor %}
+</div>
+{% endblock %}
