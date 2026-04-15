@@ -7,12 +7,22 @@ AI 驱动的对话式日记 App。Flutter 客户端，配合 [`backend/`](../bac
 ```bash
 cd memoirai
 flutter pub get
-flutter run
+
+# 本地开发（连本地 Flask 后端，默认 http://10.0.2.2:5000）
+flutter run --dart-define=ENV=dev
+
+# 真机调试 — 指定本机局域网 IP
+flutter run --dart-define=ENV=dev --dart-define=DEV_API=http://192.168.1.10:5000
+
+# 出云端包（不传 ENV 默认 cloud）
+flutter build apk --dart-define=ENV=cloud
 ```
 
-### 服务端地址
-默认 `http://10.0.2.2:5000`（Android 模拟器访问宿主机 localhost）。
-真机或 iOS：进入「我的 → 服务端地址」改成本机局域网 IP，例如 `http://192.168.1.10:5000`。
+### 环境切换
+- `ENV=dev`   → 连本地后端（`DEV_API`，默认 `http://10.0.2.2:5000`）
+- `ENV=cloud` → 连生产后端（`CLOUD_API`，在 `lib/services/env.dart` 改默认值，或 `--dart-define=CLOUD_API=...`）
+- UI 里不暴露地址输入框；DEV 环境下登录页和设置页会显示黄色 `DEV` 角标。
+- VS Code 用户：`.vscode/launch.json` 已提供 dev/cloud/profile/release 四种启动配置，F5 直接选。
 
 ## 项目结构
 

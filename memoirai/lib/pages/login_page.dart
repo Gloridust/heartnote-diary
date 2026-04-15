@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../services/api_service.dart';
+import '../services/env.dart';
 import '../theme/colors.dart';
 import '../widgets/glass_card.dart';
 
@@ -36,30 +36,6 @@ class _LoginPageState extends State<LoginPage> {
       setState(() => _err = e.toString());
     } finally {
       if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  Future<void> _configServer() async {
-    final ctrl = TextEditingController(text: ApiService.instance.baseUrl);
-    final url = await showDialog<String>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('服务端地址'),
-        content: TextField(controller: ctrl,
-          decoration: const InputDecoration(hintText: 'http://192.168.x.x:5000')),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
-          TextButton(onPressed: () => Navigator.pop(context, ctrl.text.trim()),
-            child: const Text('保存')),
-        ],
-      ),
-    );
-    if (url != null && url.isNotEmpty) {
-      await ApiService.instance.setBaseUrl(url);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('已设置：$url')));
-      }
     }
   }
 
@@ -148,20 +124,25 @@ class _LoginPageState extends State<LoginPage> {
                           : Text(_registering ? '注 册' : '登 录',
                               style: const TextStyle(letterSpacing: 2)),
                       ),
-                      const SizedBox(height: 10),
-                      Center(
-                        child: TextButton(
-                          onPressed: _configServer,
-                          child: const Text('配置服务端地址',
-                            style: TextStyle(color: AppColors.textTertiary, fontSize: 12)),
-                        ),
-                      ),
                     ]),
                   ),
                   const SizedBox(height: 20),
                   const Text('注册后请记住你的 6 位用户 ID\n可以用手机号或用户 ID 登录',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: AppColors.textTertiary, fontSize: 12, height: 1.6)),
+                  if (Env.isDev) ...[
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.warning.withValues(alpha: .2),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: const Text('DEV',
+                        style: TextStyle(fontSize: 10, color: AppColors.warning,
+                          fontWeight: FontWeight.w700, letterSpacing: 1.2)),
+                    ),
+                  ],
                 ]),
               ),
             ),

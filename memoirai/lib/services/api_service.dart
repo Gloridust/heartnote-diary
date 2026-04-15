@@ -3,17 +3,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/diary.dart';
 import '../models/message.dart';
 import '../models/user.dart';
+import 'env.dart';
 
 /// 单例 API 客户端
 class ApiService {
   ApiService._();
   static final ApiService instance = ApiService._();
 
-  /// 运行时可改：真机调试改成你本机 IP（如 http://192.168.1.10:5000）
-  static const String defaultBaseUrl = 'http://10.0.2.2:5000'; // Android 模拟器访问宿主
-
   late final Dio _dio = Dio(BaseOptions(
-    baseUrl: defaultBaseUrl,
+    baseUrl: Env.apiBaseUrl,
     connectTimeout: const Duration(seconds: 15),
     receiveTimeout: const Duration(seconds: 60),
     headers: {'Content-Type': 'application/json'},
@@ -28,22 +26,13 @@ class ApiService {
 
   String? _token;
   static const _kToken = 'auth_token';
-  static const _kBaseUrl = 'api_base_url';
 
   Future<void> init() async {
     final sp = await SharedPreferences.getInstance();
     _token = sp.getString(_kToken);
-    final url = sp.getString(_kBaseUrl);
-    if (url != null && url.isNotEmpty) _dio.options.baseUrl = url;
   }
 
   String get baseUrl => _dio.options.baseUrl;
-
-  Future<void> setBaseUrl(String url) async {
-    _dio.options.baseUrl = url;
-    final sp = await SharedPreferences.getInstance();
-    await sp.setString(_kBaseUrl, url);
-  }
 
   bool get isAuthed => _token != null;
 

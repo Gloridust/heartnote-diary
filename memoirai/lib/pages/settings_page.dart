@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
 import '../providers/diary_provider.dart';
 import '../services/api_service.dart';
+import '../services/env.dart';
 import '../theme/colors.dart';
 import '../widgets/glass_card.dart';
 
@@ -68,24 +69,6 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  Future<void> _editServerUrl() async {
-    final ctrl = TextEditingController(text: ApiService.instance.baseUrl);
-    final url = await showDialog<String>(context: context, builder: (_) => AlertDialog(
-      title: const Text('服务端地址'),
-      content: TextField(controller: ctrl,
-        decoration: const InputDecoration(hintText: 'http://192.168.x.x:5000')),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
-        TextButton(onPressed: () => Navigator.pop(context, ctrl.text.trim()),
-          child: const Text('保存')),
-      ],
-    ));
-    if (url != null && url.isNotEmpty) {
-      await ApiService.instance.setBaseUrl(url);
-      setState(() {});
-    }
-  }
-
   Future<void> _logout() async {
     final ok = await showDialog<bool>(context: context, builder: (_) => AlertDialog(
       title: const Text('退出登录'),
@@ -143,9 +126,21 @@ class _SettingsPageState extends State<SettingsPage> {
             onTap: _changePassword,
             trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textTertiary)),
           const _Divider(),
-          _SettingsRow(icon: Icons.cloud_outlined, label: '服务端地址',
-            onTap: _editServerUrl,
-            trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textTertiary)),
+          _SettingsRow(icon: Icons.cloud_outlined, label: '运行环境',
+            trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: (Env.isDev ? AppColors.warning : AppColors.success).withValues(alpha: .2),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(Env.label,
+                  style: TextStyle(
+                    fontSize: 10, fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
+                    color: Env.isDev ? AppColors.warning : AppColors.success)),
+              ),
+            ])),
         ])),
         const SizedBox(height: 20),
         ElevatedButton(
@@ -154,8 +149,8 @@ class _SettingsPageState extends State<SettingsPage> {
           child: const Text('退出登录'),
         ),
         const SizedBox(height: 30),
-        const Center(child: Text('声命体 MemoirAI · v1.0.0',
-          style: TextStyle(fontSize: 11, color: AppColors.textTertiary))),
+        Center(child: Text('声命体 MemoirAI · v1.0.0 · ${ApiService.instance.baseUrl}',
+          style: const TextStyle(fontSize: 11, color: AppColors.textTertiary))),
       ]),
     );
   }
