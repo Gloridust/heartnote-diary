@@ -149,7 +149,7 @@ class _SettingsPageState extends State<SettingsPage> {
           child: const Text('退出登录'),
         ),
         const SizedBox(height: 30),
-        Center(child: Text('声命体 MemoirAI · v1.0.0 · ${ApiService.instance.baseUrl}',
+        Center(child: Text('声迹 · v1.0.0 · ${ApiService.instance.baseUrl}',
           style: const TextStyle(fontSize: 11, color: AppColors.textTertiary))),
       ]),
     );

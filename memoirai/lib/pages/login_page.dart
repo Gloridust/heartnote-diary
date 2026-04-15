@@ -67,7 +67,7 @@ class _LoginPageState extends State<LoginPage> {
                     child: const Icon(Icons.favorite_rounded, color: Colors.white, size: 34),
                   ),
                   const SizedBox(height: 14),
-                  const Text('声命体 MemoirAI',
+                  const Text('声迹',
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary)),
                   const SizedBox(height: 4),

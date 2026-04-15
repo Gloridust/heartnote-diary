@@ -1,4 +1,4 @@
-# 声命体 MemoirAI（Flutter）
+# 声迹 MemoirAI（Flutter）
 
 AI 驱动的对话式日记 App。Flutter 客户端，配合 [`backend/`](../backend) Flask 后端使用。
 

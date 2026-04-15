@@ -32,7 +32,7 @@ class MemoirAIApp extends StatelessWidget {
           ],
         );
         return MaterialApp.router(
-          title: '声命体 MemoirAI',
+          title: '声迹',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light(),
           routerConfig: router,

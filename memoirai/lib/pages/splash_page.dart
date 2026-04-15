@@ -43,7 +43,7 @@ class _SplashPageState extends State<SplashPage> {
             child: const Icon(Icons.favorite_rounded, color: Colors.white, size: 44),
           ),
           const SizedBox(height: 20),
-          const Text('声命体 MemoirAI',
+          const Text('声迹',
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600,
               color: AppColors.textPrimary)),
           const SizedBox(height: 6),
