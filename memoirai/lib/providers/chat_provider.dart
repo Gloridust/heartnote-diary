@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/context.dart';
 import '../models/message.dart';
 import '../services/api_service.dart';
+import '../utils/haptics.dart';
 
 /// 由 HomePage 在初始化时注入：每次 chat 成功后回写最新活力值
 typedef VitalityUpdater = void Function(int newBalance);
@@ -167,17 +168,20 @@ class ChatProvider extends ChangeNotifier {
       final mode = content['mode'];
       if (mode == 'end') {
         _draft = DiaryDraft.fromJson(content);
+        Haptics.aiDraftReady(); // 日记草稿生成 — 重要事件
       } else {
         final msg = (content['message'] as String?)?.trim()
           ?? (forceFinishHint ? '稍等，让我再问你一下。' : '嗯，我在听呢。');
         _messages.add(ChatMessage(content: msg, isUser: false));
+        Haptics.aiReplyReceived(); // 一段对话回复送达 — 轻提示
       }
-    } on VitalityInsufficient catch (e) {
+    } on VitalityInsufficient catch (_) {
       _outOfVitality = true;
-      _error = '活力不足（剩余 ${e.balance} ⚡），请充值后继续对话';
-      // 把刚加的用户消息留着，便于充值后重发
+      _error = null; // UI 用顶部红条提示，不在消息区重复
+      Haptics.warning();
     } catch (e) {
       _error = e.toString();
+      Haptics.warning();
     } finally {
       _thinking = false;
       notifyListeners();

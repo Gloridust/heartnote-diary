@@ -6,6 +6,7 @@ from passlib.hash import bcrypt
 from ..extensions import db
 from ..models import User, Admin, Diary, RedeemCode, AppSetting, VitalityLog, gen_user_id, gen_redeem_code
 from ..routes.settings import PUBLIC_KEYS
+from ..routes.legal import DEFAULT_PRIVACY
 from ..vitality_service import grant, revoke
 
 bp = Blueprint("admin", __name__, template_folder="../templates")
@@ -255,3 +256,37 @@ def settings_toggle():
     AppSetting.set(key, "false" if current else "true")
     flash(f"{key} 已切换为 {'关闭' if current else '开启'}", "success")
     return redirect(url_for("admin.settings_page"))
+
+
+# ===== 隐私政策编辑 =====
+
+@bp.get("/legal")
+@admin_required
+def legal_page():
+    content = AppSetting.get("legal_privacy") or DEFAULT_PRIVACY
+    updated = AppSetting.get("legal_privacy_updated_at")
+    return render_template("admin/legal.html",
+                           content=content, updated=updated,
+                           admin_name=session.get("admin_name"))
+
+
+@bp.post("/legal")
+@admin_required
+def legal_save():
+    content = request.form.get("content") or ""
+    if not content.strip():
+        flash("内容不能为空", "error")
+        return redirect(url_for("admin.legal_page"))
+    AppSetting.set("legal_privacy", content)
+    AppSetting.set("legal_privacy_updated_at", datetime.utcnow().strftime("%Y-%m-%d"))
+    flash("隐私政策已更新", "success")
+    return redirect(url_for("admin.legal_page"))
+
+
+@bp.post("/legal/reset")
+@admin_required
+def legal_reset():
+    AppSetting.set("legal_privacy", DEFAULT_PRIVACY)
+    AppSetting.set("legal_privacy_updated_at", datetime.utcnow().strftime("%Y-%m-%d"))
+    flash("已重置为默认模板", "success")
+    return redirect(url_for("admin.legal_page"))

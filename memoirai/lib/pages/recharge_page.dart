@@ -6,16 +6,17 @@ import '../providers/settings_provider.dart';
 import '../providers/vitality_provider.dart';
 import '../theme/colors.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/sliding_segment.dart';
 
 class RechargePage extends StatefulWidget {
   const RechargePage({super.key});
   @override State<RechargePage> createState() => _RechargePageState();
 }
 
-class _RechargePageState extends State<RechargePage> with SingleTickerProviderStateMixin {
-  late TabController _tab;
-  int _initialTab = 0;
-  late List<_TabSpec> _tabs;
+class _RechargePageState extends State<RechargePage> {
+  late final PageController _pc;
+  int _idx = 0;
+  late final List<_TabSpec> _tabs;
 
   @override
   void initState() {
@@ -24,46 +25,59 @@ class _RechargePageState extends State<RechargePage> with SingleTickerProviderSt
     final iapEnabled = Platform.isIOS && settings.iapEnabled;
     final redeemEnabled = settings.redeemCodeEnabled;
     _tabs = [
-      if (iapEnabled) _TabSpec('App Store', _IapPanel()),
-      if (redeemEnabled) _TabSpec('兑换码', _RedeemPanel()),
+      if (iapEnabled) _TabSpec('iap', 'App Store', _IapPanel()),
+      if (redeemEnabled) _TabSpec('redeem', '兑换码', _RedeemPanel()),
     ];
     if (_tabs.isEmpty) {
-      _tabs = [_TabSpec('提示', _DisabledPanel())];
+      _tabs = [_TabSpec('disabled', '提示', _DisabledPanel())];
     }
-    _tab = TabController(length: _tabs.length, vsync: this, initialIndex: _initialTab);
+    _pc = PageController();
   }
 
   @override
-  void dispose() { _tab.dispose(); super.dispose(); }
+  void dispose() { _pc.dispose(); super.dispose(); }
+
+  void _go(int i) {
+    setState(() => _idx = i);
+    _pc.animateToPage(i,
+      duration: const Duration(milliseconds: 320), curve: Curves.easeOutCubic);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('充值'),
-        bottom: _tabs.length > 1
-          ? TabBar(controller: _tab,
-              labelColor: AppColors.primaryDark,
-              unselectedLabelColor: AppColors.textSecondary,
-              indicatorColor: AppColors.primary,
-              tabs: [for (final t in _tabs) Tab(text: t.label)])
-          : null,
-      ),
-      body: TabBarView(controller: _tab,
-        children: [for (final t in _tabs) t.body]),
+      appBar: AppBar(title: const Text('充值')),
+      body: Column(children: [
+        if (_tabs.length > 1) Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
+          child: SlidingSegment<int>(
+            value: _idx,
+            onChanged: _go,
+            items: [
+              for (int i = 0; i < _tabs.length; i++)
+                SlidingSegmentItem(value: i, label: _tabs[i].label),
+            ],
+          ),
+        ),
+        Expanded(child: PageView(
+          controller: _pc,
+          onPageChanged: (i) => setState(() => _idx = i),
+          children: [for (final t in _tabs) t.body],
+        )),
+      ]),
     );
   }
 }
 
 class _TabSpec {
+  final String key;
   final String label;
   final Widget body;
-  _TabSpec(this.label, this.body);
+  _TabSpec(this.key, this.label, this.body);
 }
 
 // ===== IAP 面板（骨架，等接 in_app_purchase） =====
 class _IapPanel extends StatelessWidget {
-  // 套餐列表（最终对齐 App Store Connect 的 product id）
   static const _products = [
     (id: 'vitality_300',  name: '小杯', vitality: 300,  price: '¥6'),
     (id: 'vitality_1000', name: '中杯', vitality: 1000, price: '¥18'),
@@ -88,7 +102,7 @@ class _IapPanel extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Center(
-                  child: Text('⚡', style: TextStyle(fontSize: 24, color: Colors.white))),
+                  child: Icon(Icons.bolt_rounded, color: Colors.white, size: 28)),
               ),
               const SizedBox(width: 14),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,7 +155,7 @@ class _RedeemPanelState extends State<_RedeemPanel> {
     try {
       final gained = await context.read<VitalityProvider>().redeem(code);
       if (!mounted) return;
-      setState(() { _success = '兑换成功！获得 $gained ⚡'; _ctrl.clear(); });
+      setState(() { _success = '兑换成功，已到账 +$gained'; _ctrl.clear(); });
     } catch (e) {
       setState(() => _err = e.toString().replaceFirst('Exception: ', ''));
     } finally {

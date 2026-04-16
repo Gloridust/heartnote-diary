@@ -62,27 +62,11 @@ class _VitalityPageState extends State<VitalityPage> {
                   Text('${v.balance}',
                     style: const TextStyle(fontSize: 44, fontWeight: FontWeight.w800,
                       color: Colors.white, height: 1)),
-                  const SizedBox(width: 6),
-                  const Padding(padding: EdgeInsets.only(bottom: 6),
-                    child: Text('⚡', style: TextStyle(fontSize: 20))),
+                  const SizedBox(width: 4),
+                  const Padding(padding: EdgeInsets.only(bottom: 8),
+                    child: Icon(Icons.bolt_rounded, size: 24, color: Colors.white)),
                 ]),
-                const SizedBox(height: 14),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: .18),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Row(children: [
-                    Icon(Icons.info_outline_rounded, size: 16, color: Colors.white),
-                    SizedBox(width: 6),
-                    Expanded(child: Text(
-                      '聊天每轮 1 ⚡  ·  生成日记 5 ⚡',
-                      style: TextStyle(color: Colors.white, fontSize: 12.5,
-                        fontWeight: FontWeight.w500))),
-                  ]),
-                ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 18),
                 if (canRecharge)
                   ElevatedButton(
                     onPressed: () => Navigator.push(context,
@@ -121,8 +105,8 @@ class _VitalityPageState extends State<VitalityPage> {
                 child: Center(child: CircularProgressIndicator(
                   valueColor: AlwaysStoppedAnimation(AppColors.primary)))),
             if (!v.loading && v.history.isEmpty)
-              Padding(padding: const EdgeInsets.all(40), child: Center(
-                child: Column(children: const [
+              const Padding(padding: EdgeInsets.all(40), child: Center(
+                child: Column(children: [
                   Icon(Icons.bolt_rounded, size: 56, color: AppColors.textTertiary),
                   SizedBox(height: 8),
                   Text('暂无记录', style: TextStyle(color: AppColors.textSecondary)),
@@ -191,8 +175,11 @@ class _Tag extends StatelessWidget {
         color: c.withValues(alpha: .12),
         borderRadius: BorderRadius.circular(999),
       ),
-      child: Text('$label ⚡',
-        style: TextStyle(fontSize: 12, color: c, fontWeight: FontWeight.w700)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(Icons.bolt_rounded, size: 12, color: c),
+        Text(label,
+          style: TextStyle(fontSize: 12, color: c, fontWeight: FontWeight.w700)),
+      ]),
     );
   }
 }

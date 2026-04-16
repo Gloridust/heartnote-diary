@@ -3,7 +3,11 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../theme/colors.dart';
 
-/// 微光拟物卡片：柔和高光 + 深色阴影，带细微渐变
+/// 微光拟物卡片 — Liquid Glass 风
+/// 关键三层（用嵌套 Container 替代 Stack，避免 ListView 里 sizing 失效）：
+///   1. 主体垂直渐变（从亮到稍暗，模拟玻璃光散射）
+///   2. 内层 1px 白色高光描边
+///   3. 双层阴影（顶部 1px 高光 + 底部柔阴影）
 class GlassCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -22,26 +26,28 @@ class GlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: padding,
+    final base = color ?? AppColors.surface;
+    return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topLeft, end: Alignment.bottomRight,
+          begin: Alignment.topCenter, end: Alignment.bottomCenter,
           colors: [
-            (color ?? AppColors.surface).withValues(alpha: 1),
-            (color ?? AppColors.surface).withValues(alpha: .92),
+            base,
+            Color.lerp(base, AppColors.bgPageAlt, .15)!,
           ],
         ),
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: Colors.white.withValues(alpha: .7), width: 1),
+        // 边框：用 borderStrong（米色调）而不是纯白，
+        // 因为纯白在米色背景上会"融"看不清
+        border: Border.all(color: AppColors.border, width: 1),
         boxShadow: glow ? Shadows.glow : Shadows.soft,
       ),
-      child: child,
+      child: Padding(padding: padding, child: child),
     );
   }
 }
 
-/// iOS 26 风格悬浮毛玻璃 Tab Bar
+/// iOS 26 风格悬浮毛玻璃 Tab Bar — 选中色块平滑滑到目标位置
 class FrostedTabBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
@@ -53,69 +59,104 @@ class FrostedTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final selected = currentIndex.clamp(0, tabs.length - 1);
+    const barHeight = 68.0;
+    const innerPad = 7.0;
+    final thumbHeight = barHeight - innerPad * 2;
+
     return Padding(
       padding: EdgeInsets.only(
         left: 18, right: 18,
         bottom: MediaQuery.of(context).padding.bottom + 12,
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(999),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-          child: Container(
-            height: 64,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: .72),
+      child: SizedBox(
+        height: barHeight,
+        child: Stack(clipBehavior: Clip.none, children: [
+          // 毛玻璃外壳
+          Positioned.fill(
+            child: ClipRRect(
               borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: Colors.white.withValues(alpha: .7), width: 1),
-              boxShadow: const [
-                BoxShadow(color: Color(0x1A000000), blurRadius: 28, offset: Offset(0, 10)),
-              ],
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: .72),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: Colors.white.withValues(alpha: .7), width: 1),
+                    boxShadow: const [
+                      BoxShadow(color: Color(0x1A000000), blurRadius: 28, offset: Offset(0, 10)),
+                    ],
+                  ),
+                ),
+              ),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-            child: Row(
-              children: List.generate(tabs.length, (i) {
-                final active = i == currentIndex;
-                return Expanded(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => onTap(i),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 240),
-                      curve: Curves.easeOutCubic,
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
+          ),
+          // 内层：内边距 + 滑块 + 文字
+          Padding(
+            padding: const EdgeInsets.all(innerPad),
+            child: LayoutBuilder(
+              builder: (_, c) {
+                final thumbW = c.maxWidth / tabs.length;
+                return Stack(clipBehavior: Clip.none, children: [
+                  // 滑动色块（垂直居中、固定 thumbHeight）
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 360),
+                    curve: Curves.easeOutCubic,
+                    left: thumbW * selected,
+                    top: 0,
+                    bottom: 0,
+                    width: thumbW,
+                    child: Container(
+                      height: thumbHeight,
                       decoration: BoxDecoration(
-                        gradient: active
-                          ? const LinearGradient(
-                              begin: Alignment.topLeft, end: Alignment.bottomRight,
-                              colors: [AppColors.primaryLight, AppColors.primary],
-                            )
-                          : null,
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft, end: Alignment.bottomRight,
+                          colors: [AppColors.primaryLight, AppColors.primary],
+                        ),
                         borderRadius: BorderRadius.circular(999),
-                        boxShadow: active ? const [
-                          BoxShadow(color: Color(0x33B19CD9), blurRadius: 12, offset: Offset(0, 4)),
-                        ] : null,
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(tabs[i].icon, size: 22,
-                            color: active ? Colors.white : AppColors.textSecondary),
-                          const SizedBox(height: 2),
-                          Text(tabs[i].label,
-                            style: TextStyle(
-                              fontSize: 11, fontWeight: FontWeight.w600,
-                              color: active ? Colors.white : AppColors.textSecondary,
-                            )),
+                        boxShadow: [
+                          BoxShadow(color: AppColors.primary.withValues(alpha: .35),
+                            blurRadius: 14, offset: const Offset(0, 5)),
                         ],
                       ),
                     ),
                   ),
-                );
-              }),
+                  // 文字层
+                  Positioned.fill(
+                    child: Row(children: List.generate(tabs.length, (i) {
+                      final active = i == selected;
+                      final color = active ? Colors.white : AppColors.textSecondary;
+                      return Expanded(child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => onTap(i),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            TweenAnimationBuilder<Color?>(
+                              duration: const Duration(milliseconds: 280),
+                              curve: Curves.easeOut,
+                              tween: ColorTween(end: color),
+                              builder: (_, c, __) => Icon(tabs[i].icon, size: 22, color: c),
+                            ),
+                            const SizedBox(height: 2),
+                            AnimatedDefaultTextStyle(
+                              duration: const Duration(milliseconds: 280),
+                              style: TextStyle(
+                                fontSize: 11, fontWeight: FontWeight.w600,
+                                color: color,
+                              ),
+                              child: Text(tabs[i].label),
+                            ),
+                          ],
+                        ),
+                      ));
+                    })),
+                  ),
+                ]);
+              },
             ),
           ),
-        ),
+        ]),
       ),
     );
   }

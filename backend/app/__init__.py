@@ -33,6 +33,7 @@ def create_app() -> Flask:
     from .routes.geo import bp as geo_bp
     from .routes.vitality import bp as vitality_bp
     from .routes.settings import bp as settings_bp
+    from .routes.legal import bp as legal_bp
     from .routes.admin import bp as admin_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
@@ -42,6 +43,7 @@ def create_app() -> Flask:
     app.register_blueprint(geo_bp, url_prefix="/api/geo")
     app.register_blueprint(vitality_bp, url_prefix="/api/vitality")
     app.register_blueprint(settings_bp, url_prefix="/api/settings")
+    app.register_blueprint(legal_bp, url_prefix="/legal")
     app.register_blueprint(admin_bp, url_prefix="/admin")
 
     @app.get("/api/health")

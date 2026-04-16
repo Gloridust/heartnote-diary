@@ -10,6 +10,7 @@ import '../services/api_service.dart';
 import '../services/env.dart';
 import '../theme/colors.dart';
 import '../widgets/glass_card.dart';
+import 'privacy_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -72,6 +73,59 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  /// 注销账号 — 二次确认 + 输入密码
+  Future<void> _deleteAccount() async {
+    // 第一次确认
+    final ok1 = await showDialog<bool>(context: context, builder: (_) => AlertDialog(
+      title: const Text('永久删除账户？'),
+      content: const Text(
+        '删除后将无法恢复：\n'
+        '• 所有日记将不再可见\n'
+        '• 余额、兑换码记录全部清除\n'
+        '• 同手机号可重新注册（视为新账户）\n\n'
+        '确定要继续吗？'),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context, false),
+          child: const Text('再想想')),
+        TextButton(onPressed: () => Navigator.pop(context, true),
+          child: const Text('继续', style: TextStyle(color: AppColors.danger))),
+      ],
+    ));
+    if (ok1 != true) return;
+
+    // 第二次：输入密码
+    final pwdCtrl = TextEditingController();
+    final pwd = await showDialog<String>(context: context, builder: (_) => AlertDialog(
+      title: const Text('请输入密码确认'),
+      content: TextField(controller: pwdCtrl, obscureText: true, autofocus: true,
+        decoration: const InputDecoration(hintText: '当前账户密码')),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context),
+          child: const Text('取消')),
+        TextButton(onPressed: () => Navigator.pop(context, pwdCtrl.text),
+          child: const Text('确认删除', style: TextStyle(color: AppColors.danger))),
+      ],
+    ));
+    if (pwd == null || pwd.isEmpty) return;
+
+    try {
+      await ApiService.instance.deleteAccount(pwd);
+      if (!mounted) return;
+      // 清本地状态后跳登录
+      await context.read<AuthProvider>().logout();
+      context.read<DiaryProvider>().clear();
+      context.read<VitalityProvider>().clear();
+      await context.read<ChatProvider>().reset();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('账户已删除')));
+      context.go('/login');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$e')));
+    }
+  }
+
   Future<void> _logout() async {
     final ok = await showDialog<bool>(context: context, builder: (_) => AlertDialog(
       title: const Text('退出登录'),
@@ -130,6 +184,11 @@ class _SettingsPageState extends State<SettingsPage> {
             onTap: _changePassword,
             trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textTertiary)),
           const _Divider(),
+          _SettingsRow(icon: Icons.shield_outlined, label: '隐私政策',
+            onTap: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const PrivacyPage())),
+            trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textTertiary)),
+          const _Divider(),
           _SettingsRow(icon: Icons.cloud_outlined, label: '运行环境',
             trailing: Row(mainAxisSize: MainAxisSize.min, children: [
               Container(
@@ -152,6 +211,15 @@ class _SettingsPageState extends State<SettingsPage> {
           style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
           child: const Text('退出登录'),
         ),
+        const SizedBox(height: 12),
+        // 注销按钮 — 文字按钮即可，不抢主操作
+        Center(child: TextButton(
+          onPressed: _deleteAccount,
+          child: const Text('永久删除账户',
+            style: TextStyle(color: AppColors.textTertiary, fontSize: 12,
+              decoration: TextDecoration.underline,
+              decorationColor: AppColors.textTertiary)),
+        )),
         const SizedBox(height: 30),
         Center(child: Text('声迹 · v1.0.0 · ${ApiService.instance.baseUrl}',
           style: const TextStyle(fontSize: 11, color: AppColors.textTertiary))),

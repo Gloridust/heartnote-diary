@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +10,7 @@ import '../providers/diary_provider.dart';
 import '../providers/vitality_provider.dart';
 import '../services/location_service.dart';
 import '../theme/colors.dart';
+import '../utils/haptics.dart';
 import '../widgets/chat_bubble.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/voice_input.dart';
@@ -102,7 +104,6 @@ class _HomePageState extends State<HomePage> {
         // 活力不足提示
         if (chat.outOfVitality)
           _OutOfVitalityNotice(
-            balance: context.watch<VitalityProvider>().balance,
             onDismiss: chat.clearOutOfVitality,
             onRecharge: () {
               chat.clearOutOfVitality();
@@ -130,11 +131,15 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
 
+        // 「整理成日记」 — 浮在输入框上方
+        if (!chat.thinking && chat.draft == null && chat.hasStarted)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4, top: 2),
+            child: _FinishPill(onTap: () => chat.requestFinish()),
+          ),
         VoiceInputBar(
           busy: chat.thinking,
-          hasDraft: chat.draft != null,
           onSubmitText: (t) => chat.sendUserText(t),
-          onRequestFinish: () => chat.requestFinish(),
         ),
       ]),
     );
@@ -195,24 +200,30 @@ class _ContextBanner extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 2, 20, 6),
       child: Row(children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: AppColors.border),
-            boxShadow: const [BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2))],
+        ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: .65),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: Colors.white.withValues(alpha: .8)),
+                boxShadow: const [BoxShadow(color: Color(0x0F000000), blurRadius: 10, offset: Offset(0, 3))],
+              ),
+              child: loading
+                ? const Row(mainAxisSize: MainAxisSize.min, children: [
+                    SizedBox(width: 12, height: 12,
+                      child: CircularProgressIndicator(strokeWidth: 1.5,
+                        valueColor: AlwaysStoppedAnimation(AppColors.primaryDark))),
+                    SizedBox(width: 8),
+                    Text('定位中…',
+                      style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                  ])
+                : _buildChip(context!),
+            ),
           ),
-          child: loading
-            ? const Row(mainAxisSize: MainAxisSize.min, children: [
-                SizedBox(width: 12, height: 12,
-                  child: CircularProgressIndicator(strokeWidth: 1.5,
-                    valueColor: AlwaysStoppedAnimation(AppColors.primaryDark))),
-                SizedBox(width: 8),
-                Text('定位中…',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-              ])
-            : _buildChip(context!),
         ),
       ]),
     );
@@ -223,7 +234,7 @@ class _ContextBanner extends StatelessWidget {
     final l = c.location;
     return Row(mainAxisSize: MainAxisSize.min, children: [
       if (w != null) ...[
-        Text(w.iconEmoji, style: const TextStyle(fontSize: 14)),
+        Icon(w.iconData, size: 14, color: AppColors.primaryDark),
         const SizedBox(width: 4),
         Text('${w.temperature}° ${w.description}',
           style: const TextStyle(fontSize: 12, color: AppColors.textPrimary,
@@ -235,15 +246,20 @@ class _ContextBanner extends StatelessWidget {
         decoration: const BoxDecoration(color: AppColors.textTertiary, shape: BoxShape.circle),
       ),
       if (w != null && l != null) const SizedBox(width: 8),
-      if (l != null) Flexible(
-        child: Text(
-          l.city.isNotEmpty
-            ? (l.district.isNotEmpty ? '${l.city}·${l.district}' : l.city)
-            : l.formattedAddress,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+      if (l != null) ...[
+        const Icon(Icons.location_on_rounded, size: 13,
+          color: AppColors.textTertiary),
+        const SizedBox(width: 2),
+        Flexible(
+          child: Text(
+            l.city.isNotEmpty
+              ? (l.district.isNotEmpty ? '${l.city}·${l.district}' : l.city)
+              : l.formattedAddress,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          ),
         ),
-      ),
+      ],
     ]);
   }
 }
@@ -303,12 +319,49 @@ class _RestoreNotice extends StatelessWidget {
   }
 }
 
+class _FinishPill extends StatelessWidget {
+  final VoidCallback onTap;
+  const _FinishPill({required this.onTap});
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: GestureDetector(
+        onTap: onTap,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: .55),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: Colors.white.withValues(alpha: .65)),
+                boxShadow: [BoxShadow(
+                  color: AppColors.primary.withValues(alpha: .12),
+                  blurRadius: 14, offset: const Offset(0, 4)),
+                ],
+              ),
+              child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.auto_awesome_rounded, size: 16, color: AppColors.primaryDark),
+                SizedBox(width: 6),
+                Text('帮我整理成日记',
+                  style: TextStyle(color: AppColors.primaryDark,
+                    fontSize: 13, fontWeight: FontWeight.w600)),
+              ]),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _OutOfVitalityNotice extends StatelessWidget {
-  final int balance;
   final VoidCallback onDismiss;
   final VoidCallback onRecharge;
   const _OutOfVitalityNotice({
-    required this.balance, required this.onDismiss, required this.onRecharge,
+    required this.onDismiss, required this.onRecharge,
   });
 
   @override
@@ -325,10 +378,10 @@ class _OutOfVitalityNotice extends StatelessWidget {
           border: Border.all(color: AppColors.danger.withValues(alpha: .3)),
         ),
         child: Row(children: [
-          const Text('⚡', style: TextStyle(fontSize: 18)),
-          const SizedBox(width: 8),
-          Expanded(child: Text('活力不足（剩余 $balance ⚡），充值后继续',
-            style: const TextStyle(fontSize: 13, color: AppColors.textPrimary,
+          const Icon(Icons.bolt_rounded, color: AppColors.danger, size: 18),
+          const SizedBox(width: 6),
+          const Expanded(child: Text('活力不足，充值后继续畅聊',
+            style: TextStyle(fontSize: 13, color: AppColors.textPrimary,
               fontWeight: FontWeight.w600))),
           TextButton(onPressed: onRecharge, child: const Text('去充值',
             style: TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.w700))),
@@ -354,6 +407,7 @@ class _DraftCardState extends State<_DraftCard> {
 
   Future<void> _save() async {
     setState(() => _saving = true);
+    Haptics.tap();
     final chat = context.read<ChatProvider>();
     final diary = context.read<DiaryProvider>();
     try {
@@ -365,12 +419,14 @@ class _DraftCardState extends State<_DraftCard> {
         weather: chat.context?.weather,
       );
       if (!mounted) return;
+      Haptics.success();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('✓ 已保存到日记本')));
       await chat.reset();
       chat.seedWelcome();
     } catch (e) {
       if (!mounted) return;
+      Haptics.warning();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('保存失败：$e')));
     } finally {
@@ -393,8 +449,13 @@ class _DraftCardState extends State<_DraftCard> {
                 color: AppColors.moodColor(d.score).withValues(alpha: .25),
                 borderRadius: BorderRadius.circular(999),
               ),
-              child: Text('${AppColors.moodEmoji(d.score)} ${d.score}/10',
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Text(AppColors.moodEmoji(d.score),
+                  style: const TextStyle(fontSize: 12)),
+                const SizedBox(width: 4),
+                Text('${d.score} / 10',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+              ]),
             ),
             const SizedBox(width: 8),
             Container(
@@ -403,9 +464,14 @@ class _DraftCardState extends State<_DraftCard> {
                 color: AppColors.primarySoft,
                 borderRadius: BorderRadius.circular(999),
               ),
-              child: Text('#${d.tag}',
-                style: const TextStyle(fontSize: 12, color: AppColors.primaryDark,
-                  fontWeight: FontWeight.w600)),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.local_offer_rounded, size: 11,
+                  color: AppColors.primaryDark),
+                const SizedBox(width: 3),
+                Text(d.tag,
+                  style: const TextStyle(fontSize: 12, color: AppColors.primaryDark,
+                    fontWeight: FontWeight.w600)),
+              ]),
             ),
           ]),
           const SizedBox(height: 12),

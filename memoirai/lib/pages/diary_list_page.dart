@@ -228,7 +228,10 @@ class _DiaryCard extends StatelessWidget {
             const SizedBox(height: 8),
             Row(children: [
               if (entry.score != null) ...[
-                Text('${AppColors.moodEmoji(entry.score!)} ${entry.score}/10',
+                Text(AppColors.moodEmoji(entry.score!),
+                  style: const TextStyle(fontSize: 13)),
+                const SizedBox(width: 4),
+                Text('${entry.score} / 10',
                   style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                 const SizedBox(width: 8),
               ],
@@ -236,9 +239,14 @@ class _DiaryCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: AppColors.primarySoft, borderRadius: BorderRadius.circular(999)),
-                child: Text('#${entry.tagTitle}',
-                  style: const TextStyle(fontSize: 11, color: AppColors.primaryDark,
-                    fontWeight: FontWeight.w600)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.local_offer_rounded, size: 10,
+                    color: AppColors.primaryDark),
+                  const SizedBox(width: 3),
+                  Text(entry.tagTitle,
+                    style: const TextStyle(fontSize: 11, color: AppColors.primaryDark,
+                      fontWeight: FontWeight.w600)),
+                ]),
               ),
             ]),
             const SizedBox(height: 8),

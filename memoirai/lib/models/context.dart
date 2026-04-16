@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 /// 位置 / 天气上下文模型（随日记一起存，也喂给 LLM）
 class LocationInfo {
   final double latitude;
@@ -69,15 +71,15 @@ class WeatherInfo {
     'wind_direction': windDirection, 'wind_power': windPower,
   };
 
-  String get iconEmoji {
+  IconData get iconData {
     switch (icon) {
-      case 'sunny':   return '☀️';
-      case 'cloudy':  return '⛅';
-      case 'rain':    return '🌧️';
-      case 'thunder': return '⛈️';
-      case 'snow':    return '❄️';
-      case 'fog':     return '🌫️';
-      default:        return '🌡️';
+      case 'sunny':   return Icons.wb_sunny_rounded;
+      case 'cloudy':  return Icons.cloud_rounded;
+      case 'rain':    return Icons.water_drop_rounded;
+      case 'thunder': return Icons.thunderstorm_rounded;
+      case 'snow':    return Icons.ac_unit_rounded;
+      case 'fog':     return Icons.foggy;
+      default:        return Icons.thermostat_rounded;
     }
   }
 

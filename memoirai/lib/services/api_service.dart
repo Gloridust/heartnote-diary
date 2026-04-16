@@ -110,6 +110,27 @@ class ApiService {
     return AppUser.fromJson(r.data['data']);
   }
 
+  /// 注销账号 — 后端实际只是禁用 + 释放手机号 + 失效 token。
+  Future<void> deleteAccount(String password) async {
+    final r = await _dio.post('/api/auth/delete-account',
+      data: {'password': password});
+    _check(r.data);
+    await _saveToken(null);
+  }
+
+  /// 隐私政策页面 URL（如需用浏览器/WebView 打开）
+  String get privacyUrl => '$baseUrl/legal/privacy';
+
+  /// 拉取 Markdown 形态的隐私政策（前端自渲染）
+  Future<({String content, String? updatedAt})> fetchPrivacy() async {
+    final r = await _dio.get('/legal/privacy.json');
+    final d = r.data['data'] as Map<String, dynamic>;
+    return (
+      content: d['content'] as String? ?? '',
+      updatedAt: d['updated_at'] as String?,
+    );
+  }
+
   // ========== Diary ==========
 
   Future<List<DiaryEntry>> listDiaries() async {
@@ -155,7 +176,7 @@ class ApiService {
     final data = r.data;
     if (data['success'] != true) {
       if (data['code'] == 'vitality_insufficient') {
-        throw VitalityInsufficient(data['balance'] as int? ?? 0);
+        throw VitalityInsufficient();
       }
       throw ApiError(data['error'] ?? '对话服务异常');
     }
@@ -235,7 +256,6 @@ class ApiError implements Exception {
 }
 
 class VitalityInsufficient implements Exception {
-  final int balance;
-  VitalityInsufficient(this.balance);
+  VitalityInsufficient();
   @override String toString() => '活力不足，请充值后继续';
 }

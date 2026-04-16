@@ -101,11 +101,11 @@ def chat():
         return jsonify({"success": False, "error": "服务端未配置 ARK_API_KEY"}), 500
 
     user = g.current_user
-    # 前置最低门槛：余额至少够 1 ⚡（continue），不够直接拒绝
+    # 前置最低门槛：不够直接拒绝（不返回具体余额）
     if user.vitality_balance < Cost.CHAT_TURN:
         return jsonify({
-            "success": False, "error": "活力不足，请充值后继续",
-            "code": "vitality_insufficient", "balance": user.vitality_balance,
+            "success": False, "error": "活力不足",
+            "code": "vitality_insufficient",
         }), 402
 
     data = request.get_json(silent=True) or {}

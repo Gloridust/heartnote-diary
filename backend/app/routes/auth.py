@@ -127,3 +127,28 @@ def update_profile():
         user.nickname = (data.get("nickname") or "").strip() or None
     db.session.commit()
     return _ok(user.to_dict())
+
+
+@bp.post("/delete-account")
+@auth_required
+def delete_account():
+    """注销账号 — 前端显示永久删除，后端实际处理为禁用 + 释放手机号 + token 失效。
+    需要密码二次确认，避免被误操作 / 抢账号。
+    """
+    user = g.current_user
+    data = request.get_json(silent=True) or {}
+    password = data.get("password") or ""
+    if not bcrypt.verify(password, user.password_hash):
+        return _err("密码错误", 401)
+
+    # 1. 禁用 + token 失效
+    user.status = "disabled"
+    user.invalidate_tokens()
+    # 2. 释放手机号 — 在末尾打上 _del_<id>_<时间戳> 后缀，让该手机号可以重新注册
+    suffix = f"_del_{user.id}_{int(datetime.utcnow().timestamp())}"
+    if not user.phone.endswith(suffix):
+        user.phone = f"{user.phone}{suffix}"[:32]  # 字段长度上限
+    # 3. 昵称打上注销标记，避免管理员后台误以为是正常用户
+    user.nickname = (user.nickname or "用户") + "(已注销)"
+    db.session.commit()
+    return _ok()

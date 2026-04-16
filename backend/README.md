@@ -34,6 +34,9 @@ python run.py
 - `GET  /api/vitality/history` (Bearer) 按天聚合
 - `POST /api/vitality/redeem`  (Bearer) `{code}` 兑换码
 - `GET  /api/settings/public`  云控开关（无需登录）
+- `POST /api/auth/delete-account` (Bearer) `{password}` 注销账号（前端"永久删除"实则禁用）
+- `GET  /legal/privacy`  隐私政策 HTML（公开，可浏览器打开）
+- `GET  /legal/privacy.json`  隐私政策 Markdown（供 App 内自渲染）
 
 ## 计费规则
 - 普通对话：1 ⚡/次

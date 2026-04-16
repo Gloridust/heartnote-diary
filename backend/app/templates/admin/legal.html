@@ -1,0 +1,31 @@
+{% extends "admin/base.html" %}
+{% block body %}
+<div class="card">
+  <div class="row" style="justify-content:space-between;margin-bottom:14px">
+    <div>
+      <h2 style="margin:0;font-size:18px">隐私政策</h2>
+      <p style="margin:4px 0 0;color:var(--muted);font-size:12px">
+        支持简单 Markdown：<code># 一级标题</code>、<code>## 二级</code>、<code>### 三级</code>、<code>- 列表项</code>、<code>**加粗**</code>。
+        最近更新：{{ updated or '—' }}
+      </p>
+    </div>
+    <div class="row">
+      <a class="btn btn-secondary" href="{{ url_for('legal.privacy_html') }}" target="_blank">预览</a>
+      <form method="post" action="{{ url_for('admin.legal_reset') }}" class="inline"
+            onsubmit="return confirm('重置为默认模板？当前内容将被覆盖。')">
+        <button type="submit" class="btn-secondary">重置默认</button>
+      </form>
+    </div>
+  </div>
+
+  <form method="post" action="{{ url_for('admin.legal_save') }}">
+    <textarea name="content" rows="28" required
+      style="width:100%;font-family:'SF Mono',Consolas,Monaco,monospace;font-size:13px;
+             padding:14px;border-radius:12px;border:1px solid var(--border);background:#fff;
+             line-height:1.7">{{ content }}</textarea>
+    <div style="margin-top:14px">
+      <button type="submit">保存并发布</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
