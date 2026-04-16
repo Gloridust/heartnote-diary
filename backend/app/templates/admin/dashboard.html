@@ -5,6 +5,7 @@
   <div class="stat"><div class="v">{{ stats.active_users }}</div><div class="l">活跃</div></div>
   <div class="stat"><div class="v">{{ stats.disabled_users }}</div><div class="l">已禁用</div></div>
   <div class="stat"><div class="v">{{ stats.total_diaries }}</div><div class="l">总日记数</div></div>
+  <div class="stat"><div class="v">{{ stats.unused_codes }}</div><div class="l">未用兑换码</div></div>
 </div>
 
 <div class="card">
@@ -28,7 +29,7 @@
   <table>
     <thead><tr>
       <th>用户ID</th><th>手机号</th><th>昵称</th><th>状态</th>
-      <th>日记</th><th>注册时间</th><th>最近登录</th><th>操作</th>
+      <th>活力</th><th>日记</th><th>注册</th><th>最近登录</th><th>操作</th>
     </tr></thead>
     <tbody>
       {% for u in users %}
@@ -43,11 +44,26 @@
             <span class="pill pill-disabled">已禁用</span>
           {% endif %}
         </td>
+        <td>
+          <a href="{{ url_for('admin.user_vitality_log', uid=u.id) }}" title="查看流水">⚡ {{ u.vitality_balance }}</a>
+        </td>
         <td><a href="{{ url_for('admin.user_diaries', uid=u.id) }}">{{ u.diaries|length }} 篇</a></td>
-        <td style="color:var(--muted);font-size:12px">{{ u.created_at.strftime('%Y-%m-%d %H:%M') if u.created_at else '—' }}</td>
-        <td style="color:var(--muted);font-size:12px">{{ u.last_login_at.strftime('%Y-%m-%d %H:%M') if u.last_login_at else '—' }}</td>
+        <td style="color:var(--muted);font-size:12px">{{ u.created_at.strftime('%Y-%m-%d') if u.created_at else '—' }}</td>
+        <td style="color:var(--muted);font-size:12px">{{ u.last_login_at.strftime('%m-%d %H:%M') if u.last_login_at else '—' }}</td>
         <td>
           <div class="row">
+            <details>
+              <summary class="btn btn-secondary" style="padding:6px 10px">活力</summary>
+              <form method="post" action="{{ url_for('admin.adjust_vitality', uid=u.id) }}" class="row" style="margin-top:6px">
+                <input type="number" name="amount" placeholder="数量" min="1" required style="width:80px">
+                <select name="op">
+                  <option value="grant">发放</option>
+                  <option value="revoke">扣除</option>
+                </select>
+                <input name="note" placeholder="备注（可选）" style="width:120px">
+                <button type="submit">提交</button>
+              </form>
+            </details>
             {% if u.status == 'active' %}
               <form method="post" action="{{ url_for('admin.disable_user', uid=u.id) }}" class="inline">
                 <button class="btn-secondary" type="submit">禁用</button>
@@ -70,7 +86,7 @@
         </td>
       </tr>
       {% else %}
-      <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:40px">暂无用户</td></tr>
+      <tr><td colspan="9" style="text-align:center;color:var(--muted);padding:40px">暂无用户</td></tr>
       {% endfor %}
     </tbody>
   </table>

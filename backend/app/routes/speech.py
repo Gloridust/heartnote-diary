@@ -1,8 +1,9 @@
 import uuid
 import base64
 from flask import Blueprint, request, jsonify, current_app
-from flask_jwt_extended import jwt_required
 import requests
+
+from ..auth_helpers import auth_required
 
 bp = Blueprint("speech", __name__)
 
@@ -10,7 +11,7 @@ RECOGNIZE_URL = "https://openspeech.bytedance.com/api/v3/auc/bigmodel/recognize/
 
 
 @bp.post("/recognize")
-@jwt_required()
+@auth_required
 def recognize():
     cfg = current_app.config
     if not cfg.get("BYTEDANCE_APP_KEY") or not cfg.get("BYTEDANCE_ACCESS_TOKEN"):

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
 import '../providers/diary_provider.dart';
+import '../providers/vitality_provider.dart';
 import '../services/api_service.dart';
 import '../services/env.dart';
 import '../theme/colors.dart';
@@ -60,9 +61,11 @@ class _SettingsPageState extends State<SettingsPage> {
     ));
     if (ok != true) return;
     try {
-      await ApiService.instance.changePassword(oldCtrl.text, newCtrl.text);
+      final user = await ApiService.instance.changePassword(oldCtrl.text, newCtrl.text);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('密码已修改')));
+      context.read<AuthProvider>().setUser(user);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('密码已修改，其它设备已自动下线')));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
@@ -82,7 +85,8 @@ class _SettingsPageState extends State<SettingsPage> {
     if (ok != true) return;
     await context.read<AuthProvider>().logout();
     context.read<DiaryProvider>().clear();
-    context.read<ChatProvider>().reset();
+    context.read<VitalityProvider>().clear();
+    await context.read<ChatProvider>().reset();
     if (!mounted) return;
     context.go('/login');
   }

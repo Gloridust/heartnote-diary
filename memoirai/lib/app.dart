@@ -9,6 +9,8 @@ import 'pages/main_shell.dart';
 import 'providers/auth_provider.dart';
 import 'providers/chat_provider.dart';
 import 'providers/diary_provider.dart';
+import 'providers/settings_provider.dart';
+import 'providers/vitality_provider.dart';
 import 'theme/app_theme.dart';
 
 class MemoirAIApp extends StatelessWidget {
@@ -21,6 +23,8 @@ class MemoirAIApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => DiaryProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ChangeNotifierProvider(create: (_) => VitalityProvider()),
+        ChangeNotifierProvider(create: (_) => SettingsProvider()),
       ],
       child: Builder(builder: (context) {
         final router = GoRouter(

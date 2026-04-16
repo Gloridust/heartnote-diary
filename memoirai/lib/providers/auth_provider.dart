@@ -10,8 +10,20 @@ class AuthProvider extends ChangeNotifier {
   bool get loading => _loading;
   bool get isAuthed => _user != null;
 
+  /// 收到 401 / 403 时被 ApiService 调用
+  String? lastForceLogoutReason;
+  bool get hadForceLogout => lastForceLogoutReason != null;
+  void clearForceLogout() { lastForceLogoutReason = null; notifyListeners(); }
+
   Future<void> bootstrap() async {
     await ApiService.instance.init();
+    ApiService.instance.onAuthInvalid((reason) async {
+      // 服务端宣告令牌失效（改密/重置/禁用）
+      lastForceLogoutReason = reason;
+      _user = null;
+      await ApiService.instance.logout();
+      notifyListeners();
+    });
     if (ApiService.instance.isAuthed) {
       try {
         _user = await ApiService.instance.me();

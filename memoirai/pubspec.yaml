@@ -31,9 +31,12 @@ dependencies:
   fl_chart: ^0.69.0
 
   # 录音与权限
-  record: ^5.1.2
+  record: ^6.0.0
   permission_handler: ^11.3.1
   path_provider: ^2.1.4
+
+  # 定位
+  geolocator: ^13.0.1
 
   # 工具
   intl: ^0.20.2

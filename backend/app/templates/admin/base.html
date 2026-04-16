@@ -53,10 +53,12 @@
 <body>
 {% if session.admin_id %}
 <header>
-  <h1>🌿 MemoirAI 管理后台</h1>
+  <h1>🌿 声迹 管理后台</h1>
   <nav>
     <span style="color:var(--muted);font-size:13px">管理员：{{ session.admin_name }}</span>
-    <a href="{{ url_for('admin.dashboard') }}">用户管理</a>
+    <a href="{{ url_for('admin.dashboard') }}">用户</a>
+    <a href="{{ url_for('admin.codes_list') }}">兑换码</a>
+    <a href="{{ url_for('admin.settings_page') }}">云控</a>
     <a href="{{ url_for('admin.logout') }}">退出</a>
   </nav>
 </header>

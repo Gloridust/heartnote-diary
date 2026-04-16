@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import '../providers/chat_provider.dart';
+import '../providers/diary_provider.dart';
+import '../providers/vitality_provider.dart';
 import '../theme/colors.dart';
 import '../widgets/glass_card.dart';
 import 'home_page.dart';
@@ -13,6 +19,38 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _idx = 0;
   final _pages = const [HomePage(), DiaryListPage(), ProfilePage()];
+
+  AuthProvider? _auth;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final auth = context.read<AuthProvider>();
+    if (_auth != auth) {
+      _auth?.removeListener(_onAuthChange);
+      _auth = auth;
+      _auth!.addListener(_onAuthChange);
+    }
+  }
+
+  void _onAuthChange() {
+    final reason = _auth?.lastForceLogoutReason;
+    if (reason != null && mounted) {
+      // 清掉本地状态并跳到登录
+      context.read<DiaryProvider>().clear();
+      context.read<ChatProvider>().reset();
+      context.read<VitalityProvider>().clear();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(reason)));
+      _auth!.clearForceLogout();
+      context.go('/login');
+    }
+  }
+
+  @override
+  void dispose() {
+    _auth?.removeListener(_onAuthChange);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

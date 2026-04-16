@@ -1,3 +1,5 @@
+import 'context.dart';
+
 class DiaryEntry {
   final int id;
   final String title;
@@ -5,10 +7,13 @@ class DiaryEntry {
   final DateTime date;
   final int? score;
   final String? tag;
+  final LocationInfo? location;
+  final WeatherInfo? weather;
 
   DiaryEntry({
     required this.id, required this.title, required this.content,
     required this.date, this.score, this.tag,
+    this.location, this.weather,
   });
 
   factory DiaryEntry.fromJson(Map<String, dynamic> j) {
@@ -26,6 +31,10 @@ class DiaryEntry {
       date: dt,
       score: j['score'] as int?,
       tag: j['tag'] as String?,
+      location: j['location'] is Map<String, dynamic>
+        ? LocationInfo.fromJson(j['location'] as Map<String, dynamic>) : null,
+      weather: j['weather'] is Map<String, dynamic>
+        ? WeatherInfo.fromJson(j['weather'] as Map<String, dynamic>) : null,
     );
   }
 

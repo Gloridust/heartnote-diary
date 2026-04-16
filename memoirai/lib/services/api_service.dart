@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/context.dart';
 import '../models/diary.dart';
 import '../models/message.dart';
 import '../models/user.dart';
+import '../models/vitality.dart';
 import 'env.dart';
 
 /// 单例 API 客户端
@@ -15,6 +18,8 @@ class ApiService {
     connectTimeout: const Duration(seconds: 15),
     receiveTimeout: const Duration(seconds: 60),
     headers: {'Content-Type': 'application/json'},
+    // 不抛 4xx 让我们自己处理错误码
+    validateStatus: (s) => s != null && s < 500,
   ))..interceptors.add(InterceptorsWrapper(
     onRequest: (opts, handler) async {
       if (_token != null) {
@@ -22,10 +27,25 @@ class ApiService {
       }
       handler.next(opts);
     },
+    onResponse: (resp, handler) {
+      // 401 + auth_invalid → 通知 app 全局登出
+      final data = resp.data;
+      if (resp.statusCode == 401 && data is Map &&
+          (data['code'] == 'auth_invalid' || data['code'] == 'forbidden')) {
+        _onAuthInvalid?.call(data['message']?.toString() ?? '登录已过期');
+      }
+      handler.next(resp);
+    },
   ));
 
   String? _token;
   static const _kToken = 'auth_token';
+
+  /// app 启动时由 AuthProvider 注册：当后端返回 401 时全局登出
+  void Function(String reason)? _onAuthInvalid;
+  void onAuthInvalid(void Function(String reason) cb) => _onAuthInvalid = cb;
+
+  String? get token => _token;
 
   Future<void> init() async {
     final sp = await SharedPreferences.getInstance();
@@ -75,10 +95,13 @@ class ApiService {
 
   Future<void> logout() async { await _saveToken(null); }
 
-  Future<void> changePassword(String oldPwd, String newPwd) async {
+  /// 改密成功后服务端会签发新 token，旧 token 失效。返回新的 user。
+  Future<AppUser> changePassword(String oldPwd, String newPwd) async {
     final r = await _dio.post('/api/auth/change-password',
       data: {'old_password': oldPwd, 'new_password': newPwd});
     _check(r.data);
+    await _saveToken(r.data['data']['token'] as String);
+    return AppUser.fromJson(r.data['data']['user']);
   }
 
   Future<AppUser> updateNickname(String nickname) async {
@@ -99,6 +122,7 @@ class ApiService {
   Future<int> saveDiary({
     int? diaryId, required String title, required String content,
     required DateTime date, int? score, String? tag,
+    LocationInfo? location, WeatherInfo? weather,
   }) async {
     final r = await _dio.post('/api/diary', data: {
       if (diaryId != null) 'diary_id': diaryId,
@@ -106,6 +130,8 @@ class ApiService {
       'date': date.toUtc().toIso8601String(),
       if (score != null) 'score': score,
       if (tag != null) 'tag': tag,
+      if (location != null) 'location': location.toJson(),
+      if (weather != null) 'weather': weather.toJson(),
     });
     _check(r.data);
     return r.data['diary_id'] as int;
@@ -118,6 +144,7 @@ class ApiService {
 
   // ========== Chat ==========
 
+  /// 返回 {content: {...}, vitality: int}
   Future<Map<String, dynamic>> chat(List<ChatMessage> history,
       {String? weather, String? location}) async {
     final r = await _dio.post('/api/chat', data: {
@@ -125,10 +152,61 @@ class ApiService {
       if (weather != null) 'weather': weather,
       if (location != null) 'location': location,
     });
-    if (r.data['success'] != true) {
-      throw ApiError(r.data['error'] ?? '对话服务异常');
+    final data = r.data;
+    if (data['success'] != true) {
+      if (data['code'] == 'vitality_insufficient') {
+        throw VitalityInsufficient(data['balance'] as int? ?? 0);
+      }
+      throw ApiError(data['error'] ?? '对话服务异常');
     }
-    return r.data['content'] as Map<String, dynamic>;
+    return {
+      'content': data['content'] as Map<String, dynamic>,
+      'vitality': data['vitality'] as int? ?? 0,
+    };
+  }
+
+  // ========== Vitality ==========
+
+  Future<int> vitalityBalance() async {
+    final r = await _dio.get('/api/vitality/balance');
+    _check(r.data);
+    return r.data['balance'] as int;
+  }
+
+  Future<List<VitalityDay>> vitalityHistory() async {
+    final r = await _dio.get('/api/vitality/history');
+    _check(r.data);
+    final list = (r.data['data'] as List).cast<Map<String, dynamic>>();
+    return list.map(VitalityDay.fromJson).toList();
+  }
+
+  /// 兑换码兑换。返回 (新余额, 获得的活力)
+  Future<(int balance, int gained)> redeemCode(String code) async {
+    final r = await _dio.post('/api/vitality/redeem', data: {'code': code});
+    _check(r.data);
+    return (r.data['vitality'] as int, r.data['gained'] as int);
+  }
+
+  // ========== Public settings (云控) ==========
+
+  Future<Map<String, bool>> publicSettings() async {
+    final r = await _dio.get('/api/settings/public');
+    if (r.data['status'] != 'success') return {};
+    final m = (r.data['data'] as Map).cast<String, dynamic>();
+    return m.map((k, v) => MapEntry(k, v == true));
+  }
+
+  // ========== Geo + Weather ==========
+
+  Future<AppContext?> fetchGeoContext(double lat, double lon) async {
+    try {
+      final r = await _dio.get('/api/geo/context',
+        queryParameters: {'lat': lat, 'lon': lon});
+      if (r.data['status'] != 'success') return null;
+      return AppContext.fromJson(r.data['data'] as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
   }
 
   // ========== Speech ==========
@@ -154,4 +232,10 @@ class ApiError implements Exception {
   final String message;
   ApiError(this.message);
   @override String toString() => message;
+}
+
+class VitalityInsufficient implements Exception {
+  final int balance;
+  VitalityInsufficient(this.balance);
+  @override String toString() => '活力不足，请充值后继续';
 }

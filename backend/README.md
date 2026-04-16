@@ -27,8 +27,28 @@ python run.py
 - `GET  /api/diary`  (Bearer) 拉取当前用户所有日记
 - `POST /api/diary`  (Bearer) 新建/更新
 - `DELETE /api/diary/<diary_id>` (Bearer)
-- `POST /api/chat`   (Bearer) LLM 对话
+- `POST /api/chat`   (Bearer) LLM 对话（messages + 可选 weather/location 文本，**消耗活力**）
 - `POST /api/speech/recognize` (Bearer) 语音转文字
+- `GET  /api/geo/context?lat=&lon=` (Bearer) 位置+天气（高德，大陆可用）
+- `GET  /api/vitality/balance` (Bearer)
+- `GET  /api/vitality/history` (Bearer) 按天聚合
+- `POST /api/vitality/redeem`  (Bearer) `{code}` 兑换码
+- `GET  /api/settings/public`  云控开关（无需登录）
+
+## 计费规则
+- 普通对话：1 ⚡/次
+- 生成日记（mode=end）：5 ⚡/次
+- 新用户初始：100 ⚡
+
+## Token
+- JWT 默认 365 天 (`JWT_ACCESS_TOKEN_HOURS=8760`)
+- 改密 / admin 重置 / admin 禁用 → `User.token_version += 1` → 所有旧 token 立即失效（HTTP 401, code=auth_invalid）
+
+## 管理后台新增页面
+- `/admin/codes` 兑换码批量生成 / 删除 / 状态筛选
+- `/admin/settings` 云控开关切换（如「兑换码入口」）
+- 用户行新增「活力」操作（发放/扣除 + 备注）
+- ⚡ 列点击进入用户的活力流水
 
 管理后台：`http://localhost:5000/admin/login` — 首次启动自动创建账号 `admin / admin123`（可在 .env 改）。
 

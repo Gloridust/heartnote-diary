@@ -1,0 +1,70 @@
+{% extends "admin/base.html" %}
+{% block body %}
+<div class="card">
+  <h2 style="margin:0 0 14px;font-size:18px">兑换码管理</h2>
+  <details open>
+    <summary>+ 批量生成</summary>
+    <form method="post" action="{{ url_for('admin.codes_generate') }}" class="row" style="margin-top:12px;gap:10px;flex-wrap:wrap">
+      <label>数量 <input name="count" type="number" min="1" max="200" value="10" required style="width:80px"></label>
+      <label>每码面额 <input name="vitality" type="number" min="1" value="100" required style="width:90px"> ⚡</label>
+      <label>有效期 <input name="expires_days" type="number" min="0" placeholder="天数（留空永久）" style="width:140px"></label>
+      <input name="note" placeholder="批次备注（可选）" style="flex:1;min-width:160px">
+      <button type="submit">生成</button>
+    </form>
+  </details>
+</div>
+
+<div class="card">
+  <div class="row" style="justify-content:space-between;margin-bottom:10px">
+    <div class="row">
+      <a class="btn {% if status_filter == 'all' %}{% else %}btn-secondary{% endif %}"
+         href="{{ url_for('admin.codes_list') }}">全部</a>
+      <a class="btn {% if status_filter == 'unused' %}{% else %}btn-secondary{% endif %}"
+         href="{{ url_for('admin.codes_list', status='unused') }}">未使用</a>
+      <a class="btn {% if status_filter == 'used' %}{% else %}btn-secondary{% endif %}"
+         href="{{ url_for('admin.codes_list', status='used') }}">已使用</a>
+    </div>
+    <span style="color:var(--muted);font-size:12px">最多展示 500 条</span>
+  </div>
+  <table>
+    <thead><tr>
+      <th>兑换码</th><th>面额</th><th>状态</th><th>使用人</th><th>使用时间</th>
+      <th>过期时间</th><th>备注</th><th>创建</th><th>操作</th>
+    </tr></thead>
+    <tbody>
+      {% for c in codes %}
+      <tr>
+        <td><code style="font-size:14px">{{ c.code }}</code>
+          <button onclick="navigator.clipboard.writeText('{{ c.code }}');this.textContent='已复制'"
+                  style="margin-left:6px;padding:2px 8px;font-size:11px">复制</button></td>
+        <td>⚡ {{ c.vitality }}</td>
+        <td>
+          {% if c.is_used %}
+            <span class="pill pill-disabled">已用</span>
+          {% elif c.is_expired %}
+            <span class="pill pill-disabled">过期</span>
+          {% else %}
+            <span class="pill pill-active">可用</span>
+          {% endif %}
+        </td>
+        <td>{{ c.used_by or '—' }}</td>
+        <td style="color:var(--muted);font-size:12px">{{ c.used_at.strftime('%Y-%m-%d %H:%M') if c.used_at else '—' }}</td>
+        <td style="color:var(--muted);font-size:12px">{{ c.expires_at.strftime('%Y-%m-%d') if c.expires_at else '永久' }}</td>
+        <td style="color:var(--muted);font-size:12px">{{ c.note or '—' }}</td>
+        <td style="color:var(--muted);font-size:12px">{{ c.created_at.strftime('%m-%d %H:%M') }}</td>
+        <td>
+          {% if not c.is_used %}
+          <form method="post" action="{{ url_for('admin.codes_delete', cid=c.id) }}" class="inline"
+                onsubmit="return confirm('确认删除此兑换码？')">
+            <button class="btn-danger" type="submit">删除</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="9" style="text-align:center;color:var(--muted);padding:40px">暂无兑换码</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

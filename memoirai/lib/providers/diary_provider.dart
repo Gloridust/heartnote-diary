@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../models/context.dart';
 import '../models/diary.dart';
 import '../services/api_service.dart';
 
@@ -26,10 +27,12 @@ class DiaryProvider extends ChangeNotifier {
   Future<int> save({
     int? diaryId, required String title, required String content,
     required DateTime date, int? score, String? tag,
+    LocationInfo? location, WeatherInfo? weather,
   }) async {
     final id = await ApiService.instance.saveDiary(
       diaryId: diaryId, title: title, content: content,
       date: date, score: score, tag: tag,
+      location: location, weather: weather,
     );
     await load();
     return id;

@@ -1,0 +1,39 @@
+{% extends "admin/base.html" %}
+{% block body %}
+<div class="card">
+  <h2 style="margin:0 0 6px;font-size:18px">云控开关</h2>
+  <p style="margin:0 0 18px;color:var(--muted);font-size:13px">
+    客户端启动时拉取，可即时生效（用户重新进入对应页面/重启 App）。
+  </p>
+
+  {% set descriptions = {
+    "redeem_code_enabled": "兑换码入口（默认隐藏）。开启后用户「我的→充值」会显示「兑换码」分页。",
+    "iap_enabled": "iOS 内购入口。仅 iOS 客户端会显示。"
+  } %}
+
+  <table>
+    <thead><tr><th>配置项</th><th>说明</th><th>当前状态</th><th>操作</th></tr></thead>
+    <tbody>
+      {% for key, default in keys.items() %}
+      <tr>
+        <td><code>{{ key }}</code></td>
+        <td style="color:var(--muted);font-size:13px">{{ descriptions.get(key, '') }}</td>
+        <td>
+          {% if settings[key] %}
+            <span class="pill pill-active">已开启</span>
+          {% else %}
+            <span class="pill pill-disabled">已关闭</span>
+          {% endif %}
+        </td>
+        <td>
+          <form method="post" action="{{ url_for('admin.settings_toggle') }}" class="inline">
+            <input type="hidden" name="key" value="{{ key }}">
+            <button type="submit">切换</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

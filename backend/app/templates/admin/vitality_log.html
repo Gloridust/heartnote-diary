@@ -1,0 +1,33 @@
+{% extends "admin/base.html" %}
+{% block body %}
+<div class="card">
+  <div class="row" style="justify-content:space-between;margin-bottom:12px">
+    <div>
+      <h3 style="margin:0">用户 {{ user.id }} 的活力流水</h3>
+      <p style="margin:4px 0 0;color:var(--muted);font-size:13px">
+        {{ user.phone }} · 当前余额 ⚡ <strong>{{ user.vitality_balance }}</strong>
+      </p>
+    </div>
+    <a class="btn btn-secondary" href="{{ url_for('admin.dashboard') }}">← 返回</a>
+  </div>
+
+  <table>
+    <thead><tr><th>时间</th><th>类型</th><th>变动</th><th>结余</th><th>备注</th></tr></thead>
+    <tbody>
+      {% for l in logs %}
+      <tr>
+        <td style="color:var(--muted);font-size:12px">{{ l.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+        <td>{{ l.type }}</td>
+        <td style="color:{% if l.delta > 0 %}#2e7d32{% else %}#c62828{% endif %};font-weight:600">
+          {{ '+' if l.delta > 0 else '' }}{{ l.delta }} ⚡
+        </td>
+        <td>{{ l.balance_after }}</td>
+        <td style="color:var(--muted);font-size:12px">{{ l.note or '—' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:30px">暂无流水</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

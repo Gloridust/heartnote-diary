@@ -27,8 +27,9 @@ class Config:
         self.SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
 
         self.JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", self.SECRET_KEY)
+        # 默认 365 天
         self.JWT_ACCESS_TOKEN_EXPIRES = timedelta(
-            hours=int(os.getenv("JWT_ACCESS_TOKEN_HOURS", "720"))
+            hours=int(os.getenv("JWT_ACCESS_TOKEN_HOURS", "8760"))
         )
 
         self.CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*")
@@ -37,3 +38,4 @@ class Config:
         self.DOUBAO_MODEL = os.getenv("DOUBAO_MODEL", "doubao-1-5-pro-32k-250115")
         self.BYTEDANCE_APP_KEY = os.getenv("BYTEDANCE_APP_KEY", "")
         self.BYTEDANCE_ACCESS_TOKEN = os.getenv("BYTEDANCE_ACCESS_TOKEN", "")
+        self.AMAP_KEY = os.getenv("AMAP_KEY", "")

@@ -1,15 +1,17 @@
 import re
 from datetime import datetime
-from flask import Blueprint, request, jsonify
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask import Blueprint, request, jsonify, g
+from flask_jwt_extended import create_access_token
 from passlib.hash import bcrypt
 
+from ..auth_helpers import auth_required, make_token_claims
 from ..extensions import db
-from ..models import User, gen_user_id
+from ..models import User, VitalityLog, gen_user_id
+from ..vitality_service import Cost
 
 bp = Blueprint("auth", __name__)
 
-PHONE_RE = re.compile(r"^1[3-9]\d{9}$")  # 中国大陆手机号
+PHONE_RE = re.compile(r"^1[3-9]\d{9}$")
 USER_ID_RE = re.compile(r"^\d{6,7}$")
 
 
@@ -23,6 +25,11 @@ def _ok(data=None, **extra):
 
 def _err(msg, code=400):
     return jsonify({"status": "error", "message": msg}), code
+
+
+def _issue_token(user: User) -> str:
+    return create_access_token(identity=str(user.id),
+                               additional_claims=make_token_claims(user))
 
 
 @bp.post("/register")
@@ -45,12 +52,17 @@ def register():
         phone=phone,
         password_hash=bcrypt.hash(password),
         nickname=nickname,
+        vitality_balance=Cost.INITIAL_GRANT,
     )
     db.session.add(user)
+    db.session.flush()
+    db.session.add(VitalityLog(
+        user_id=user.id, delta=Cost.INITIAL_GRANT,
+        type="initial", note="新用户欢迎礼", balance_after=user.vitality_balance,
+    ))
     db.session.commit()
 
-    token = create_access_token(identity=str(user.id))
-    return _ok({"user": user.to_dict(), "token": token})
+    return _ok({"user": user.to_dict(), "token": _issue_token(user)})
 
 
 @bp.post("/login")
@@ -79,27 +91,19 @@ def login():
     user.last_login_at = datetime.utcnow()
     db.session.commit()
 
-    token = create_access_token(identity=str(user.id))
-    return _ok({"user": user.to_dict(), "token": token})
+    return _ok({"user": user.to_dict(), "token": _issue_token(user)})
 
 
 @bp.get("/me")
-@jwt_required()
+@auth_required
 def me():
-    uid = int(get_jwt_identity())
-    user = User.query.get(uid)
-    if not user:
-        return _err("用户不存在", 404)
-    return _ok(user.to_dict())
+    return _ok(g.current_user.to_dict())
 
 
 @bp.post("/change-password")
-@jwt_required()
+@auth_required
 def change_password():
-    uid = int(get_jwt_identity())
-    user = User.query.get(uid)
-    if not user:
-        return _err("用户不存在", 404)
+    user = g.current_user
     data = request.get_json(silent=True) or {}
     old_pwd = data.get("old_password") or ""
     new_pwd = data.get("new_password") or ""
@@ -108,17 +112,16 @@ def change_password():
     if len(new_pwd) < 6:
         return _err("新密码至少 6 位")
     user.password_hash = bcrypt.hash(new_pwd)
+    user.invalidate_tokens()  # 改密后所有端立刻失效
     db.session.commit()
-    return _ok()
+    # 当前请求的 token 也已失效，但本次响应里直接签发新 token，前端覆盖即可
+    return _ok({"token": _issue_token(user), "user": user.to_dict()})
 
 
 @bp.patch("/profile")
-@jwt_required()
+@auth_required
 def update_profile():
-    uid = int(get_jwt_identity())
-    user = User.query.get(uid)
-    if not user:
-        return _err("用户不存在", 404)
+    user = g.current_user
     data = request.get_json(silent=True) or {}
     if "nickname" in data:
         user.nickname = (data.get("nickname") or "").strip() or None

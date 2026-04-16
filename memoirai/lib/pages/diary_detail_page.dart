@@ -55,7 +55,7 @@ class DiaryDetailPage extends StatelessWidget {
                 style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary)),
               const SizedBox(height: 12),
-              Wrap(spacing: 8, children: [
+              Wrap(spacing: 8, runSpacing: 6, children: [
                 if (entry.score != null) Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
@@ -71,6 +71,28 @@ class DiaryDetailPage extends StatelessWidget {
                   child: Text('#${entry.tagTitle}',
                     style: const TextStyle(fontSize: 12, color: AppColors.primaryDark,
                       fontWeight: FontWeight.w600)),
+                ),
+                if (entry.weather != null) Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Text(
+                    '${entry.weather!.iconEmoji} ${entry.weather!.temperature}° ${entry.weather!.description}',
+                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                ),
+                if (entry.location != null) Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Text(
+                    '📍 ${entry.location!.city.isNotEmpty ? (entry.location!.district.isNotEmpty ? "${entry.location!.city}·${entry.location!.district}" : entry.location!.city) : entry.location!.formattedAddress}',
+                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                 ),
               ]),
               const SizedBox(height: 18),

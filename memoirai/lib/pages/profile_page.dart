@@ -1,13 +1,14 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../models/diary.dart';
 import '../providers/auth_provider.dart';
 import '../providers/diary_provider.dart';
+import '../providers/vitality_provider.dart';
 import '../theme/colors.dart';
 import '../widgets/glass_card.dart';
 import 'settings_page.dart';
+import 'vitality_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -45,6 +46,14 @@ class _ProfilePageState extends State<ProfilePage> {
             phone: auth.user?.phone ?? '',
             onSettings: () => Navigator.push(context,
               MaterialPageRoute(builder: (_) => const SettingsPage())),
+          ),
+          const SizedBox(height: 14),
+
+          // 活力值卡片
+          _VitalityCard(
+            balance: context.watch<VitalityProvider>().balance,
+            onTap: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const VitalityPage())),
           ),
           const SizedBox(height: 18),
 
@@ -106,6 +115,58 @@ class _ProfileHeader extends StatelessWidget {
         IconButton(onPressed: onSettings,
           icon: const Icon(Icons.settings_outlined, color: AppColors.textSecondary)),
       ]),
+    );
+  }
+}
+
+class _VitalityCard extends StatelessWidget {
+  final int balance;
+  final VoidCallback onTap;
+  const _VitalityCard({required this.balance, required this.onTap});
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFD9C9F2), Color(0xFFB19CD9)],
+            begin: Alignment.topLeft, end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: .3),
+            blurRadius: 16, offset: const Offset(0, 6))],
+        ),
+        child: Row(children: [
+          const Text('⚡', style: TextStyle(fontSize: 28)),
+          const SizedBox(width: 14),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('活力值',
+                style: TextStyle(fontSize: 13, color: Colors.white70,
+                  fontWeight: FontWeight.w500)),
+              const SizedBox(height: 2),
+              Text('$balance',
+                style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700,
+                  color: Colors.white, height: 1.1)),
+            ])),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: .25),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: const Row(mainAxisSize: MainAxisSize.min, children: [
+              Text('查看 / 充值',
+                style: TextStyle(fontSize: 13, color: Colors.white,
+                  fontWeight: FontWeight.w600)),
+              SizedBox(width: 4),
+              Icon(Icons.chevron_right_rounded, color: Colors.white, size: 18),
+            ]),
+          ),
+        ]),
+      ),
     );
   }
 }

@@ -1,16 +1,12 @@
-"""
-LLM 对话代理 — 把豆包 API 包装成前端友好的结构化接口。
-相比 MVP 的升级：
-  1. 使用 Doubao 的 response_format=json_object 强制结构化输出
-  2. 服务端校验 JSON schema + 兜底修复
-  3. 增加 function-like tool: finish_diary / continue_chat
-"""
+"""LLM 对话代理 + 活力扣费。"""
 import json
 import re
 from datetime import datetime
-from flask import Blueprint, request, jsonify, current_app
-from flask_jwt_extended import jwt_required
+from flask import Blueprint, request, jsonify, current_app, g
 import requests
+
+from ..auth_helpers import auth_required
+from ..vitality_service import consume, InsufficientVitality, Cost
 
 bp = Blueprint("chat", __name__)
 
@@ -24,8 +20,6 @@ ALLOWED_TAGS = {
 
 def _system_prompt(weather: str | None, location: str | None) -> str:
     now = datetime.now()
-    weekday = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"][now.weekday() + 1 if now.weekday() != 6 else 0]
-    # 修正周几计算
     weekday_map = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
     weekday = weekday_map[now.weekday()]
     time_ctx = f"今天是 {now.strftime('%Y-%m-%d')} {weekday} {now.strftime('%H:%M')}"
@@ -44,14 +38,15 @@ def _system_prompt(weather: str | None, location: str | None) -> str:
 {{"mode":"continue","message":"<你的回复，1-2 句>"}}
 
 模式 B — 用户示意结束 / 信息足够时，生成日记：
-{{"mode":"end","title":"<≤10字的标题>","message":"<完整日记 400-700 字>","score":<1-10 的整数>,"tag":"<下列之一>"}}
+{{"mode":"end","title":"<≤10字的标题>","message":"<完整日记，至少 500 字>","score":<1-10 的整数>,"tag":"<下列之一>"}}
 
 tag 只能取：work | personal | travel | relationships | health | goals | reflection | gratitude | dreams | memories。
 
 # 行为规则
-- 用户的情绪放在首位，偶尔给一句温柔的肯定/安慰，但别喧宾夺主。
+- 用户的情绪放在首位，适当时机偶尔加入一句安慰/鼓励的话，但不要浪费太多时间。
 - 生成日记时以第一人称，内容必须严格基于对话记录，不得虚构。
-- 不要在回复里使用表情符号。
+- 回复只能是纯 JSON，不能包含任何 markdown 标记或代码块围栏。
+- JSON 中的字符串值不能包含换行符、制表符等控制字符。
 
 # 时间背景
 {time_ctx}{env}
@@ -59,17 +54,14 @@ tag 只能取：work | personal | travel | relationships | health | goals | refl
 
 
 def _extract_json(raw: str) -> dict | None:
-    """尽力从模型输出里提出 JSON。"""
     if not raw:
         return None
     raw = raw.strip()
-    # 去除可能的 ```json ``` 围栏
     raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw, flags=re.I | re.S).strip()
     try:
         return json.loads(raw)
     except Exception:
         pass
-    # 找第一对 { ... }
     m = re.search(r"\{.*\}", raw, flags=re.S)
     if m:
         try:
@@ -88,7 +80,6 @@ def _normalize(parsed: dict) -> dict:
         msg = (parsed.get("message") or "").strip() or "嗯，我在听呢。"
         return {"mode": "continue", "message": msg}
 
-    # end
     title = (parsed.get("title") or "今日日记").strip()[:20]
     msg = (parsed.get("message") or "").strip()
     try:
@@ -103,11 +94,19 @@ def _normalize(parsed: dict) -> dict:
 
 
 @bp.post("")
-@jwt_required()
+@auth_required
 def chat():
     cfg = current_app.config
     if not cfg.get("ARK_API_KEY"):
         return jsonify({"success": False, "error": "服务端未配置 ARK_API_KEY"}), 500
+
+    user = g.current_user
+    # 前置最低门槛：余额至少够 1 ⚡（continue），不够直接拒绝
+    if user.vitality_balance < Cost.CHAT_TURN:
+        return jsonify({
+            "success": False, "error": "活力不足，请充值后继续",
+            "code": "vitality_insufficient", "balance": user.vitality_balance,
+        }), 402
 
     data = request.get_json(silent=True) or {}
     messages = data.get("messages") or []
@@ -141,4 +140,18 @@ def chat():
 
     parsed = _extract_json(raw) or {"mode": "continue", "message": raw[:200]}
     normalized = _normalize(parsed)
-    return jsonify({"success": True, "content": normalized, "raw": raw})
+
+    # ===== LLM 调用成功 → 按 mode 扣费 =====
+    cost = Cost.CHAT_END if normalized["mode"] == "end" else Cost.CHAT_TURN
+    try:
+        consume(user, cost, type_="chat",
+                note="生成日记" if normalized["mode"] == "end" else "对话")
+    except InsufficientVitality:
+        # 罕见：余额刚好 1 但 LLM 返回 end（需要 5）。允许扣到 0，避免 LLM 调用浪费
+        from ..vitality_service import revoke
+        revoke(user, user.vitality_balance, note="活力不足按当前余额结算")
+
+    return jsonify({
+        "success": True, "content": normalized, "raw": raw,
+        "vitality": user.vitality_balance,
+    })

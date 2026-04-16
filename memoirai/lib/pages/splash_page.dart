@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/chat_provider.dart';
+import '../providers/settings_provider.dart';
+import '../providers/vitality_provider.dart';
 import '../theme/colors.dart';
 
 class SplashPage extends StatefulWidget {
@@ -18,7 +21,14 @@ class _SplashPageState extends State<SplashPage> {
 
   Future<void> _boot() async {
     final auth = context.read<AuthProvider>();
-    await auth.bootstrap();
+    final chat = context.read<ChatProvider>();
+    final settings = context.read<SettingsProvider>();
+    await Future.wait([auth.bootstrap(), settings.refresh()]);
+    if (auth.isAuthed) {
+      await chat.bootstrap();
+      // 顺手把活力余额拿到本地（不阻塞跳转）
+      context.read<VitalityProvider>().refreshBalance();
+    }
     if (!mounted) return;
     context.go(auth.isAuthed ? '/main' : '/login');
   }
