@@ -16,13 +16,24 @@ def gen_user_id() -> int:
             return uid
 
 
-def gen_redeem_code(length: int = 12) -> str:
-    """生成兑换码：易读字符（去除 0/O/1/I）。"""
+def gen_redeem_code(length: int = 16) -> str:
+    """生成兑换码：易读字符（去除 0/O/1/I），显示时用 `-` 每 4 位分隔。"""
     chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
     while True:
         code = "".join(random.choices(chars, k=length))
         if not RedeemCode.query.filter_by(code=code).first():
             return code
+
+
+def gen_batch_id(length: int = 8) -> str:
+    """生成批次 ID — 同一次批量生成的所有兑换码共享。"""
+    chars = "abcdefghijklmnopqrstuvwxyz0123456789"
+    return "".join(random.choices(chars, k=length))
+
+
+def format_code(code: str) -> str:
+    """把 16 位连续码转成 ABCD-EFGH-IJKL-MNOP 格式用于显示。"""
+    return "-".join(code[i:i+4] for i in range(0, len(code), 4))
 
 
 class User(db.Model):
@@ -117,6 +128,7 @@ class RedeemCode(db.Model):
     __tablename__ = "redeem_codes"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     code = db.Column(db.String(32), unique=True, nullable=False, index=True)
+    batch_id = db.Column(db.String(16), nullable=True, index=True)
     vitality = db.Column(db.Integer, nullable=False)
     used_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     used_at = db.Column(db.DateTime, nullable=True)
@@ -131,6 +143,11 @@ class RedeemCode(db.Model):
     @property
     def is_expired(self):
         return self.expires_at is not None and datetime.utcnow() > self.expires_at
+
+    @property
+    def display_code(self):
+        from .models import format_code
+        return format_code(self.code)
 
 
 class AppSetting(db.Model):

@@ -4,7 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/vitality_provider.dart';
+import '../services/iap_pricing.dart';
 import '../theme/colors.dart';
+import '../utils/haptics.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/sliding_segment.dart';
 
@@ -76,57 +78,187 @@ class _TabSpec {
   _TabSpec(this.key, this.label, this.body);
 }
 
-// ===== IAP 面板（骨架，等接 in_app_purchase） =====
+// ===== IAP 面板 =====
 class _IapPanel extends StatelessWidget {
-  static const _products = [
-    (id: 'vitality_300',  name: '小杯', vitality: 300,  price: '¥6'),
-    (id: 'vitality_1000', name: '中杯', vitality: 1000, price: '¥18'),
-    (id: 'vitality_3000', name: '大杯', vitality: 3000, price: '¥45'),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 30),
       children: [
-        for (final p in _products) Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: GlassCard(
-            padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-            child: Row(children: [
+        for (final p in IapPricing.products)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _IapProductCard(product: p),
+          ),
+        const SizedBox(height: 8),
+        const Center(
+          child: Text('支付通过 Apple App Store 完成',
+            style: TextStyle(fontSize: 11, color: AppColors.textTertiary)),
+        ),
+      ],
+    );
+  }
+}
+
+class _IapProductCard extends StatelessWidget {
+  final IapProduct product;
+  const _IapProductCard({required this.product});
+
+  void _onPurchase(BuildContext context) {
+    Haptics.tap();
+    // TODO: 集成 in_app_purchase 包，发起 Apple StoreKit 购买流程
+    // 1. await InAppPurchase.instance.buyConsumable(product: ...);
+    // 2. 拿到 purchase receipt 上传后端 /api/iap/verify
+    // 3. 后端校验通过 → 加活力 → 客户端 vitality 自动刷新
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('App Store 内购功能即将上线'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isHot = product.badge != null;
+    return GestureDetector(
+      onTap: () => _onPurchase(context),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter, end: Alignment.bottomCenter,
+            colors: isHot
+              ? [AppColors.surface, Color.lerp(AppColors.surface, AppColors.primarySoft, .55)!]
+              : [AppColors.surface, Color.lerp(AppColors.surface, AppColors.bgPageAlt, .12)!],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isHot ? AppColors.primary.withValues(alpha: .35) : AppColors.border,
+            width: isHot ? 1.5 : 1,
+          ),
+          boxShadow: isHot
+            ? [BoxShadow(color: AppColors.primary.withValues(alpha: .15),
+                blurRadius: 18, offset: const Offset(0, 6))]
+            : const [BoxShadow(color: Color(0x14000000),
+                blurRadius: 14, offset: Offset(0, 5))],
+        ),
+        child: Stack(clipBehavior: Clip.none, children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+              // 左侧：闪电图
               Container(
-                width: 52, height: 52,
+                width: 56, height: 56,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [AppColors.primaryLight, AppColors.primary]),
-                  borderRadius: BorderRadius.circular(16),
+                    colors: [AppColors.primaryLight, AppColors.primary],
+                    begin: Alignment.topLeft, end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [BoxShadow(
+                    color: AppColors.primary.withValues(alpha: .35),
+                    blurRadius: 12, offset: const Offset(0, 4))],
                 ),
                 child: const Center(
-                  child: Icon(Icons.bolt_rounded, color: Colors.white, size: 28)),
+                  child: Icon(Icons.bolt_rounded, color: Colors.white, size: 30)),
               ),
               const SizedBox(width: 14),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(p.name, style: const TextStyle(fontSize: 15,
-                    fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                  const SizedBox(height: 4),
-                  Text('${p.vitality} 活力',
-                    style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-                ])),
+              // 中间：名称 + 活力
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(product.name,
+                      style: const TextStyle(fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary)),
+                    const SizedBox(height: 4),
+                    Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                      Text('${product.vitality}',
+                        style: const TextStyle(fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                          height: 1)),
+                      const SizedBox(width: 4),
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 3),
+                        child: Text('活力',
+                          style: TextStyle(fontSize: 12,
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w500)),
+                      ),
+                      if (product.hasBonus) ...[
+                        const SizedBox(width: 6),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 2),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.success.withValues(alpha: .15),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text('+${product.bonus}',
+                              style: const TextStyle(fontSize: 11,
+                                color: AppColors.success,
+                                fontWeight: FontWeight.w700)),
+                          ),
+                        ),
+                      ],
+                    ]),
+                  ],
+                ),
+              ),
+              // 右侧：价格按钮
               ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('App Store 内购即将上线')));
-                },
-                child: Text(p.price),
+                onPressed: () => _onPurchase(context),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                ),
+                child: Text(product.displayPrice,
+                  style: const TextStyle(fontSize: 15,
+                    fontWeight: FontWeight.w700, letterSpacing: .5)),
               ),
             ]),
           ),
+          // 角标
+          if (product.badge != null)
+            Positioned(
+              top: -8, right: 14,
+              child: _BadgeChip(badge: product.badge!),
+            ),
+        ]),
+      ),
+    );
+  }
+}
+
+class _BadgeChip extends StatelessWidget {
+  final IapBadge badge;
+  const _BadgeChip({required this.badge});
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, color) = switch (badge) {
+      IapBadge.popular => ('🔥 最受欢迎', AppColors.primary),
+      IapBadge.bestValue => ('💎 最划算', AppColors.success),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [color, Color.lerp(color, Colors.white, .25)!],
+          begin: Alignment.topLeft, end: Alignment.bottomRight,
         ),
-        const SizedBox(height: 8),
-        const Center(child: Text('支付通过 Apple App Store 完成',
-          style: TextStyle(fontSize: 11, color: AppColors.textTertiary))),
-      ],
+        borderRadius: BorderRadius.circular(999),
+        boxShadow: [BoxShadow(
+          color: color.withValues(alpha: .35),
+          blurRadius: 8, offset: const Offset(0, 3))],
+      ),
+      child: Text(label,
+        style: const TextStyle(fontSize: 10,
+          color: Colors.white, fontWeight: FontWeight.w700, letterSpacing: .3)),
     );
   }
 }

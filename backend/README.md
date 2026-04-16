@@ -37,6 +37,18 @@ python run.py
 - `POST /api/auth/delete-account` (Bearer) `{password}` 注销账号（前端"永久删除"实则禁用）
 - `GET  /legal/privacy`  隐私政策 HTML（公开，可浏览器打开）
 - `GET  /legal/privacy.json`  隐私政策 Markdown（供 App 内自渲染）
+- `POST /api/iap/verify` (Bearer) Apple IAP 收据校验（骨架，等 IAP 商品配置后启用）
+
+## 内购定价（与 `memoirai/lib/services/iap_pricing.dart` 严格对齐）
+
+| product_id | 价格 | 基础活力 | 实得活力 |
+|---|---|---|---|
+| `memoirai.vitality.starter`  | ¥8   | 120  | 120  |
+| `memoirai.vitality.standard` | ¥30  | 450  | 500  |
+| `memoirai.vitality.popular`  | ¥68  | 1020 | 1200 |
+| `memoirai.vitality.premium`  | ¥198 | 2970 | 3800 |
+
+需要在 App Store Connect 创建对应 Consumable 商品。
 
 ## 计费规则
 - 普通对话：1 ⚡/次

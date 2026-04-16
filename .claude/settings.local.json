@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l C:/Users/Gloridust/Documents/GitHub/heartnote-diary/.claude/skills/memoirai-design/SKILL.md C:/Users/Gloridust/Documents/GitHub/heartnote-diary/.claude/skills/memoirai-design/references/*.md)"
+    ]
+  }
+}

@@ -4,7 +4,8 @@ from flask import Blueprint, request, render_template, redirect, url_for, sessio
 from passlib.hash import bcrypt
 
 from ..extensions import db
-from ..models import User, Admin, Diary, RedeemCode, AppSetting, VitalityLog, gen_user_id, gen_redeem_code
+from ..models import (User, Admin, Diary, RedeemCode, AppSetting, VitalityLog,
+                      gen_user_id, gen_redeem_code, gen_batch_id)
 from ..routes.settings import PUBLIC_KEYS
 from ..routes.legal import DEFAULT_PRIVACY
 from ..vitality_service import grant, revoke
@@ -184,15 +185,42 @@ def user_vitality_log(uid):
 @admin_required
 def codes_list():
     status_filter = request.args.get("status", "all")
+    batch_filter = (request.args.get("batch") or "").strip()
     q = RedeemCode.query
     if status_filter == "unused":
         q = q.filter(RedeemCode.used_by.is_(None))
     elif status_filter == "used":
         q = q.filter(RedeemCode.used_by.isnot(None))
+    if batch_filter:
+        q = q.filter(RedeemCode.batch_id == batch_filter)
     codes = q.order_by(RedeemCode.created_at.desc()).limit(500).all()
+
+    # 入口开关当前状态（默认关）
+    redeem_entry_enabled = AppSetting.get_bool("redeem_code_enabled", False)
+
+    # 提取使用人手机号末四位（脱敏展示）
+    user_map = {}
+    user_ids = [c.used_by for c in codes if c.used_by]
+    if user_ids:
+        for u in User.query.filter(User.id.in_(user_ids)).all():
+            user_map[u.id] = u
+
     return render_template("admin/codes.html", codes=codes,
                            status_filter=status_filter,
+                           batch_filter=batch_filter,
+                           redeem_entry_enabled=redeem_entry_enabled,
+                           user_map=user_map,
                            admin_name=session.get("admin_name"))
+
+
+@bp.post("/codes/toggle-entry")
+@admin_required
+def codes_toggle_entry():
+    """快速切换"兑换码入口"云控开关，效果同 /admin/settings 里的对应项。"""
+    current = AppSetting.get_bool("redeem_code_enabled", False)
+    AppSetting.set("redeem_code_enabled", "false" if current else "true")
+    flash(f"兑换码入口已{'关闭' if current else '开启'}", "success")
+    return redirect(url_for("admin.codes_list"))
 
 
 @bp.post("/codes/generate")
@@ -210,15 +238,16 @@ def codes_generate():
         expires_at = datetime.utcnow() + timedelta(days=int(expires_days))
     note = (request.form.get("note") or "").strip() or None
 
-    created = []
+    # 同一次生成的所有码共享 batch_id
+    batch_id = gen_batch_id()
     for _ in range(count):
-        c = RedeemCode(code=gen_redeem_code(), vitality=vitality,
-                       expires_at=expires_at, note=note)
-        db.session.add(c)
-        created.append(c.code)
+        db.session.add(RedeemCode(
+            code=gen_redeem_code(), batch_id=batch_id,
+            vitality=vitality, expires_at=expires_at, note=note,
+        ))
     db.session.commit()
-    flash(f"已生成 {count} 个兑换码（每个 {vitality} ⚡）：{', '.join(created[:5])}{'…' if count > 5 else ''}", "success")
-    return redirect(url_for("admin.codes_list"))
+    flash(f"已生成 {count} 个兑换码（每个 {vitality} 活力，批次 {batch_id}）", "success")
+    return redirect(url_for("admin.codes_list", batch=batch_id))
 
 
 @bp.post("/codes/<int:cid>/delete")
@@ -230,7 +259,17 @@ def codes_delete(cid):
         return redirect(url_for("admin.codes_list"))
     db.session.delete(c)
     db.session.commit()
-    flash(f"已删除兑换码 {c.code}", "success")
+    flash("已删除该兑换码", "success")
+    return redirect(url_for("admin.codes_list"))
+
+
+@bp.post("/codes/batch/<batch_id>/delete-unused")
+@admin_required
+def codes_batch_delete_unused(batch_id):
+    """删除该批次中所有未使用的码（已使用的保留以维护历史记录）。"""
+    deleted = RedeemCode.query.filter_by(batch_id=batch_id, used_by=None).delete()
+    db.session.commit()
+    flash(f"已删除批次 {batch_id} 中 {deleted} 个未使用的码", "success")
     return redirect(url_for("admin.codes_list"))
 
 

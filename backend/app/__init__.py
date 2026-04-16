@@ -34,6 +34,7 @@ def create_app() -> Flask:
     from .routes.vitality import bp as vitality_bp
     from .routes.settings import bp as settings_bp
     from .routes.legal import bp as legal_bp
+    from .routes.iap import bp as iap_bp
     from .routes.admin import bp as admin_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
@@ -44,6 +45,7 @@ def create_app() -> Flask:
     app.register_blueprint(vitality_bp, url_prefix="/api/vitality")
     app.register_blueprint(settings_bp, url_prefix="/api/settings")
     app.register_blueprint(legal_bp, url_prefix="/legal")
+    app.register_blueprint(iap_bp, url_prefix="/api/iap")
     app.register_blueprint(admin_bp, url_prefix="/admin")
 
     @app.get("/api/health")
@@ -89,6 +91,15 @@ def _migrate_schema_if_needed(app):
             db.session.execute(text(
                 "ALTER TABLE users ADD COLUMN vitality_balance INTEGER NOT NULL DEFAULT 100"))
             added.append("users.vitality_balance")
+        # redeem_codes.batch_id
+        try:
+            code_cols = {row[1] for row in db.session.execute(text("PRAGMA table_info(redeem_codes)"))}
+            if code_cols and "batch_id" not in code_cols:
+                db.session.execute(text(
+                    "ALTER TABLE redeem_codes ADD COLUMN batch_id VARCHAR(16)"))
+                added.append("redeem_codes.batch_id")
+        except Exception:
+            pass
         if added:
             db.session.commit()
             app.logger.info(f"SQLite schema upgraded: {', '.join(added)}")

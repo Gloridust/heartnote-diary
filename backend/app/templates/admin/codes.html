@@ -1,70 +1,149 @@
 {% extends "admin/base.html" %}
 {% block body %}
+
+{# ========== 卡片 1：入口开关 ========== #}
 <div class="card">
-  <h2 style="margin:0 0 14px;font-size:18px">兑换码管理</h2>
-  <details open>
-    <summary>+ 批量生成</summary>
-    <form method="post" action="{{ url_for('admin.codes_generate') }}" class="row" style="margin-top:12px;gap:10px;flex-wrap:wrap">
-      <label>数量 <input name="count" type="number" min="1" max="200" value="10" required style="width:80px"></label>
-      <label>每码面额 <input name="vitality" type="number" min="1" value="100" required style="width:90px"> ⚡</label>
-      <label>有效期 <input name="expires_days" type="number" min="0" placeholder="天数（留空永久）" style="width:140px"></label>
-      <input name="note" placeholder="批次备注（可选）" style="flex:1;min-width:160px">
-      <button type="submit">生成</button>
+  <h2 style="margin:0 0 14px;font-size:16px">兑换码入口开关</h2>
+  <div class="row" style="justify-content:space-between;align-items:center">
+    <div>
+      {% if redeem_entry_enabled %}
+        <span style="color:var(--success);font-weight:600">● 已开启</span>
+        <span style="color:var(--muted);margin-left:8px">— 用户可见兑换码入口</span>
+      {% else %}
+        <span style="color:var(--danger);font-weight:600">● 已关闭</span>
+        <span style="color:var(--muted);margin-left:8px">— 用户不可见兑换码入口</span>
+      {% endif %}
+    </div>
+    <form method="post" action="{{ url_for('admin.codes_toggle_entry') }}" class="inline">
+      <button type="submit">切换</button>
     </form>
-  </details>
+  </div>
+  <p style="margin:10px 0 0;color:var(--muted);font-size:12px">
+    关闭后，App 充值页面将隐藏「兑换码」标签页（适用于审核期间或活动暂停）。
+  </p>
 </div>
 
+{# ========== 卡片 2：批量生成 ========== #}
 <div class="card">
-  <div class="row" style="justify-content:space-between;margin-bottom:10px">
-    <div class="row">
-      <a class="btn {% if status_filter == 'all' %}{% else %}btn-secondary{% endif %}"
-         href="{{ url_for('admin.codes_list') }}">全部</a>
-      <a class="btn {% if status_filter == 'unused' %}{% else %}btn-secondary{% endif %}"
-         href="{{ url_for('admin.codes_list', status='unused') }}">未使用</a>
-      <a class="btn {% if status_filter == 'used' %}{% else %}btn-secondary{% endif %}"
-         href="{{ url_for('admin.codes_list', status='used') }}">已使用</a>
+  <h2 style="margin:0 0 14px;font-size:16px">批量生成兑换码</h2>
+  <form method="post" action="{{ url_for('admin.codes_generate') }}"
+        class="row" style="gap:10px;flex-wrap:wrap;align-items:flex-end">
+    <div>
+      <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px">面额（活力）</label>
+      <input name="vitality" type="number" min="1" value="120" required style="width:110px">
     </div>
-    <span style="color:var(--muted);font-size:12px">最多展示 500 条</span>
+    <div>
+      <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px">数量</label>
+      <input name="count" type="number" min="1" max="200" value="1" required style="width:90px">
+    </div>
+    <div>
+      <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px">有效期（天，留空 = 永久）</label>
+      <input name="expires_days" type="number" min="0" placeholder="—" style="width:140px">
+    </div>
+    <div style="flex:1;min-width:200px">
+      <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px">备注</label>
+      <input name="note" placeholder="可选，如：活动赠送" style="width:100%">
+    </div>
+    <div>
+      <button type="submit" style="padding:10px 22px">生成</button>
+    </div>
+  </form>
+  <p style="margin:10px 0 0;color:var(--muted);font-size:12px">
+    同一次生成的兑换码共享一个批次 ID，便于后续管理与撤销。
+  </p>
+</div>
+
+{# ========== 卡片 3：兑换码列表 ========== #}
+<div class="card">
+  <div class="row" style="justify-content:space-between;margin-bottom:14px;align-items:center">
+    <h2 style="margin:0;font-size:16px">
+      兑换码列表
+      {% if batch_filter %}
+        <span style="color:var(--muted);font-size:13px;font-weight:400">
+          · 批次 <code>{{ batch_filter }}</code>
+        </span>
+      {% endif %}
+    </h2>
+    <div class="row">
+      <a class="btn {% if status_filter != 'all' %}btn-secondary{% endif %}"
+         href="{{ url_for('admin.codes_list', batch=batch_filter) }}">全部</a>
+      <a class="btn {% if status_filter != 'unused' %}btn-secondary{% endif %}"
+         href="{{ url_for('admin.codes_list', status='unused', batch=batch_filter) }}">未使用</a>
+      <a class="btn {% if status_filter != 'used' %}btn-secondary{% endif %}"
+         href="{{ url_for('admin.codes_list', status='used', batch=batch_filter) }}">已使用</a>
+      {% if batch_filter %}
+        <a class="btn btn-secondary" href="{{ url_for('admin.codes_list') }}">清除批次筛选</a>
+        <form method="post" action="{{ url_for('admin.codes_batch_delete_unused', batch_id=batch_filter) }}"
+              class="inline" onsubmit="return confirm('删除该批次中所有未使用的码？已使用的会保留。')">
+          <button type="submit" class="btn-danger">清除未用</button>
+        </form>
+      {% endif %}
+    </div>
   </div>
   <table>
     <thead><tr>
-      <th>兑换码</th><th>面额</th><th>状态</th><th>使用人</th><th>使用时间</th>
-      <th>过期时间</th><th>备注</th><th>创建</th><th>操作</th>
+      <th>兑换码</th>
+      <th>面额</th>
+      <th>状态</th>
+      <th>批次ID</th>
+      <th>备注</th>
+      <th>创建时间</th>
+      <th>使用时间 / 用户</th>
+      <th>操作</th>
     </tr></thead>
     <tbody>
       {% for c in codes %}
       <tr>
-        <td><code style="font-size:14px">{{ c.code }}</code>
-          <button onclick="navigator.clipboard.writeText('{{ c.code }}');this.textContent='已复制'"
-                  style="margin-left:6px;padding:2px 8px;font-size:11px">复制</button></td>
-        <td>⚡ {{ c.vitality }}</td>
+        <td>
+          <code style="font-size:13px;font-family:'SF Mono',Consolas,Monaco,monospace">{{ c.display_code }}</code>
+          <button onclick="navigator.clipboard.writeText('{{ c.display_code }}');this.textContent='已复制'"
+                  style="margin-left:6px;padding:2px 8px;font-size:11px">复制</button>
+        </td>
+        <td><strong>{{ c.vitality }}</strong></td>
         <td>
           {% if c.is_used %}
-            <span class="pill pill-disabled">已用</span>
+            <span style="color:var(--muted)">已使用</span>
           {% elif c.is_expired %}
             <span class="pill pill-disabled">过期</span>
           {% else %}
             <span class="pill pill-active">可用</span>
           {% endif %}
         </td>
-        <td>{{ c.used_by or '—' }}</td>
-        <td style="color:var(--muted);font-size:12px">{{ c.used_at.strftime('%Y-%m-%d %H:%M') if c.used_at else '—' }}</td>
-        <td style="color:var(--muted);font-size:12px">{{ c.expires_at.strftime('%Y-%m-%d') if c.expires_at else '永久' }}</td>
+        <td>
+          {% if c.batch_id %}
+            <a href="{{ url_for('admin.codes_list', batch=c.batch_id) }}"
+               style="font-family:'SF Mono',Consolas,Monaco,monospace;font-size:12px;color:var(--muted)">{{ c.batch_id }}</a>
+          {% else %}—{% endif %}
+        </td>
         <td style="color:var(--muted);font-size:12px">{{ c.note or '—' }}</td>
-        <td style="color:var(--muted);font-size:12px">{{ c.created_at.strftime('%m-%d %H:%M') }}</td>
+        <td style="color:var(--muted);font-size:12px">{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+        <td style="color:var(--muted);font-size:12px">
+          {% if c.used_at %}
+            {{ c.used_at.strftime('%Y-%m-%d %H:%M') }}
+            {% if c.used_by %}
+              <br>
+              <span>(User: {{ user_map[c.used_by].id if c.used_by in user_map else c.used_by }})</span>
+            {% endif %}
+          {% else %}—{% endif %}
+        </td>
         <td>
           {% if not c.is_used %}
           <form method="post" action="{{ url_for('admin.codes_delete', cid=c.id) }}" class="inline"
-                onsubmit="return confirm('确认删除此兑换码？')">
+                onsubmit="return confirm('删除该兑换码？')">
             <button class="btn-danger" type="submit">删除</button>
           </form>
           {% endif %}
         </td>
       </tr>
       {% else %}
-      <tr><td colspan="9" style="text-align:center;color:var(--muted);padding:40px">暂无兑换码</td></tr>
+      <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:40px">暂无兑换码</td></tr>
       {% endfor %}
     </tbody>
   </table>
+  {% if codes|length == 500 %}
+    <p style="text-align:center;color:var(--muted);font-size:12px;margin-top:10px">
+      仅显示最近 500 条，请使用筛选缩小范围。
+    </p>
+  {% endif %}
 </div>
 {% endblock %}
