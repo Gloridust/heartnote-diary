@@ -6,6 +6,7 @@ from passlib.hash import bcrypt
 from ..extensions import db
 from ..models import (User, Admin, Diary, RedeemCode, AppSetting, VitalityLog,
                       gen_user_id, gen_redeem_code, gen_batch_id)
+from ..rate_limit import Limits, check_lock, record_failure, clear_failures, get_client_ip
 from ..routes.settings import PUBLIC_KEYS
 from ..routes.legal import DEFAULT_PRIVACY
 from ..vitality_service import grant, revoke
@@ -35,10 +36,27 @@ def login():
 def login_post():
     username = (request.form.get("username") or "").strip()
     password = request.form.get("password") or ""
+    # 双 key 锁定：账号 + IP（任一触发即锁）
+    key_acc = username or "unknown"
+    key_ip = get_client_ip()
+    for scope, key in [("admin_login_acc", key_acc), ("admin_login_ip", key_ip)]:
+        locked, remain = check_lock(scope, key)
+        if locked:
+            flash(f"操作过于频繁，请 {remain // 60 + 1} 分钟后再试", "error")
+            return redirect(url_for("admin.login"))
+
     admin = Admin.query.filter_by(username=username).first()
     if not admin or not bcrypt.verify(password, admin.password_hash):
+        for scope, key in [("admin_login_acc", key_acc), ("admin_login_ip", key_ip)]:
+            n, locked, remain = record_failure(scope, key, **Limits.ADMIN_LOGIN)
+            if locked:
+                flash(f"失败次数过多，已锁定 {remain // 60 + 1} 分钟", "error")
+                return redirect(url_for("admin.login"))
         flash("账号或密码错误", "error")
         return redirect(url_for("admin.login"))
+    # 成功 — 清两个 key 的计数
+    clear_failures("admin_login_acc", key_acc)
+    clear_failures("admin_login_ip", key_ip)
     session["admin_id"] = admin.id
     session["admin_name"] = admin.username
     return redirect(url_for("admin.dashboard"))

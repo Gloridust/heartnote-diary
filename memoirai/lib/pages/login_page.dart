@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../services/api_service.dart';
 import '../services/env.dart';
 import '../theme/colors.dart';
+import '../utils/debounce.dart';
+import '../utils/haptics.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/sliding_segment.dart';
 import 'privacy_page.dart';
@@ -25,6 +28,7 @@ class _LoginPageState extends State<LoginPage> {
   String? _err;
 
   static const _kAgreedKey = 'privacy_agreed_v1';
+  final _tap = TapGuard();
 
   @override
   void initState() {
@@ -42,26 +46,34 @@ class _LoginPageState extends State<LoginPage> {
     if (!_agree) {
       setState(() => _err = '请先阅读并同意《隐私政策》');
       _shakeAgreement();
+      Haptics.warning();
       return;
     }
-    setState(() { _busy = true; _err = null; });
-    try {
-      final auth = context.read<AuthProvider>();
-      if (_registering) {
-        await auth.register(_idCtrl.text.trim(), _pwdCtrl.text);
-      } else {
-        await auth.login(_idCtrl.text.trim(), _pwdCtrl.text);
+    await _tap.run(() async {
+      setState(() { _busy = true; _err = null; });
+      Haptics.tap();
+      try {
+        final auth = context.read<AuthProvider>();
+        if (_registering) {
+          await auth.register(_idCtrl.text.trim(), _pwdCtrl.text);
+        } else {
+          await auth.login(_idCtrl.text.trim(), _pwdCtrl.text);
+        }
+        final sp = await SharedPreferences.getInstance();
+        await sp.setBool(_kAgreedKey, true);
+        if (!mounted) return;
+        Haptics.success();
+        context.go('/main');
+      } on RateLimited catch (e) {
+        Haptics.warning();
+        if (mounted) setState(() => _err = e.message);
+      } catch (e) {
+        Haptics.warning();
+        if (mounted) setState(() => _err = e.toString());
+      } finally {
+        if (mounted) setState(() => _busy = false);
       }
-      // 登录/注册成功 → 持久化同意状态
-      final sp = await SharedPreferences.getInstance();
-      await sp.setBool(_kAgreedKey, true);
-      if (!mounted) return;
-      context.go('/main');
-    } catch (e) {
-      setState(() => _err = e.toString());
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
+    });
   }
 
   // 简单提醒未勾选 — 滚动到底部并闪一下

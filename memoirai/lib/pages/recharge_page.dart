@@ -4,8 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/vitality_provider.dart';
+import '../services/api_service.dart';
 import '../services/iap_pricing.dart';
 import '../theme/colors.dart';
+import '../utils/debounce.dart';
 import '../utils/haptics.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/sliding_segment.dart';
@@ -100,29 +102,35 @@ class _IapPanel extends StatelessWidget {
   }
 }
 
-class _IapProductCard extends StatelessWidget {
+class _IapProductCard extends StatefulWidget {
   final IapProduct product;
   const _IapProductCard({required this.product});
+  @override State<_IapProductCard> createState() => _IapProductCardState();
+}
 
-  void _onPurchase(BuildContext context) {
-    Haptics.tap();
-    // TODO: 集成 in_app_purchase 包，发起 Apple StoreKit 购买流程
-    // 1. await InAppPurchase.instance.buyConsumable(product: ...);
-    // 2. 拿到 purchase receipt 上传后端 /api/iap/verify
-    // 3. 后端校验通过 → 加活力 → 客户端 vitality 自动刷新
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('App Store 内购功能即将上线'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+class _IapProductCardState extends State<_IapProductCard> {
+  final _tap = TapGuard(cooldown: const Duration(seconds: 1));
+
+  Future<void> _onPurchase() async {
+    await _tap.run(() async {
+      Haptics.tap();
+      // 详见 doc/iap.md：等 in_app_purchase 包接入后这里发起购买
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('App Store 内购功能即将上线'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    });
   }
+
+  IapProduct get product => widget.product;
 
   @override
   Widget build(BuildContext context) {
     final isHot = product.badge != null;
     return GestureDetector(
-      onTap: () => _onPurchase(context),
+      onTap: _onPurchase,
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -212,7 +220,7 @@ class _IapProductCard extends StatelessWidget {
               ),
               // 右侧：价格按钮
               ElevatedButton(
-                onPressed: () => _onPurchase(context),
+                onPressed: _onPurchase,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                 ),
@@ -270,6 +278,7 @@ class _RedeemPanel extends StatefulWidget {
 
 class _RedeemPanelState extends State<_RedeemPanel> {
   final _ctrl = TextEditingController();
+  final _tap = TapGuard(cooldown: const Duration(seconds: 1));
   bool _busy = false;
   String? _err;
   String? _success;
@@ -283,16 +292,24 @@ class _RedeemPanelState extends State<_RedeemPanel> {
       setState(() => _err = '请输入兑换码');
       return;
     }
-    setState(() { _busy = true; _err = null; _success = null; });
-    try {
-      final gained = await context.read<VitalityProvider>().redeem(code);
-      if (!mounted) return;
-      setState(() { _success = '兑换成功，已到账 +$gained'; _ctrl.clear(); });
-    } catch (e) {
-      setState(() => _err = e.toString().replaceFirst('Exception: ', ''));
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
+    await _tap.run(() async {
+      setState(() { _busy = true; _err = null; _success = null; });
+      Haptics.tap();
+      try {
+        final gained = await context.read<VitalityProvider>().redeem(code);
+        if (!mounted) return;
+        Haptics.success();
+        setState(() { _success = '兑换成功，已到账 +$gained'; _ctrl.clear(); });
+      } on RateLimited catch (e) {
+        Haptics.warning();
+        if (mounted) setState(() => _err = e.message);
+      } catch (e) {
+        Haptics.warning();
+        if (mounted) setState(() => _err = e.toString().replaceFirst('Exception: ', ''));
+      } finally {
+        if (mounted) setState(() => _busy = false);
+      }
+    });
   }
 
   Future<void> _paste() async {

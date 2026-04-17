@@ -67,6 +67,9 @@ class _SettingsPageState extends State<SettingsPage> {
       context.read<AuthProvider>().setUser(user);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('密码已修改，其它设备已自动下线')));
+    } on RateLimited catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));

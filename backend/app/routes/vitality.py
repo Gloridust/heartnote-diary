@@ -5,6 +5,7 @@ from sqlalchemy import func, case
 from ..auth_helpers import auth_required
 from ..extensions import db
 from ..models import VitalityLog, RedeemCode
+from ..rate_limit import Limits, rate_limit, get_client_ip
 from ..vitality_service import grant
 
 bp = Blueprint("vitality", __name__)
@@ -57,8 +58,10 @@ def history():
 
 @bp.post("/redeem")
 @auth_required
+@rate_limit("redeem_user", **Limits.REDEEM_PER_USER, key_fn=lambda: str(g.current_user.id))
+@rate_limit("redeem_ip", **Limits.REDEEM_PER_IP)
 def redeem():
-    """用户兑换码兑换。"""
+    """用户兑换码兑换。双层限流防止穷举。"""
     user = g.current_user
     data = request.get_json(silent=True) or {}
     raw = (data.get("code") or "").strip().upper().replace("-", "")

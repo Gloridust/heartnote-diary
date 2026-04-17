@@ -1,25 +1,8 @@
-"""Apple App Store 内购 receipt 校验接口（骨架）。
-
-接入步骤（待真机配置完 IAP 商品后启用）：
-
-  1. 在 App Store Connect 创建 4 个 Consumable 商品：
-     - memoirai.vitality.starter   ¥8     →  120 ⚡
-     - memoirai.vitality.standard  ¥30    →  500 ⚡
-     - memoirai.vitality.popular   ¥68    → 1200 ⚡
-     - memoirai.vitality.premium   ¥198   → 3800 ⚡
-
-  2. Flutter 端集成 in_app_purchase 包，调用 buyConsumable() 后拿到 receipt（base64）。
-  3. 客户端 POST /api/iap/verify  body: {product_id, receipt}
-  4. 服务端调用 Apple verifyReceipt 接口（生产 buy.itunes.apple.com，沙箱 sandbox.itunes.apple.com）
-  5. 校验通过 → 比对 product_id 决定加多少活力 → grant + 写日志（type=iap）
-  6. 同一笔 transaction_id 必须幂等（写库唯一索引），防止重放
-
-当前接口在没接 IAP 时直接返回 501 Not Implemented，
-但定价表已经定义清楚，前端 UI 也已布好，等真机测时把下面的 verify 部分填实即可。
-"""
+"""Apple App Store 内购 receipt 校验接口（骨架）。完整接入文档见 /doc/iap.md。"""
 from flask import Blueprint, request, jsonify, g, current_app
 
 from ..auth_helpers import auth_required
+from ..rate_limit import Limits, rate_limit
 
 bp = Blueprint("iap", __name__)
 
@@ -35,6 +18,7 @@ PRODUCTS = {
 
 @bp.post("/verify")
 @auth_required
+@rate_limit("iap_verify", **Limits.IAP_VERIFY, key_fn=lambda: str(g.current_user.id))
 def verify():
     """校验 Apple 收据并入账。"""
     data = request.get_json(silent=True) or {}

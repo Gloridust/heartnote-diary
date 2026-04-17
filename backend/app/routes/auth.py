@@ -7,6 +7,8 @@ from passlib.hash import bcrypt
 from ..auth_helpers import auth_required, make_token_claims
 from ..extensions import db
 from ..models import User, VitalityLog, gen_user_id
+from ..rate_limit import (Limits, check_lock, record_failure, clear_failures,
+                          rate_limit, get_client_ip)
 from ..vitality_service import Cost
 
 bp = Blueprint("auth", __name__)
@@ -33,6 +35,7 @@ def _issue_token(user: User) -> str:
 
 
 @bp.post("/register")
+@rate_limit("register", **Limits.REGISTER_PER_IP)
 def register():
     data = request.get_json(silent=True) or {}
     phone = (data.get("phone") or "").strip()
@@ -66,6 +69,7 @@ def register():
 
 
 @bp.post("/login")
+@rate_limit("login_ip", **Limits.LOGIN_PER_IP)
 def login():
     """支持手机号或 user_id 登录。"""
     data = request.get_json(silent=True) or {}
@@ -74,6 +78,15 @@ def login():
 
     if not identifier or not password:
         return _err("请输入账号与密码")
+
+    # ===== 防爆破：单账号失败计数 + 锁定 =====
+    # 用 identifier 而非 user.id 做 key，因为不存在的账号也要锁
+    locked, remain = check_lock("login_acc", identifier)
+    if locked:
+        return jsonify({
+            "status": "error", "code": "account_locked",
+            "message": f"账号已临时锁定，请 {remain // 60 + 1} 分钟后再试",
+        }), 429
 
     user = None
     if PHONE_RE.match(identifier):
@@ -84,10 +97,22 @@ def login():
         return _err("账号格式错误（应为手机号或 6 位用户ID）")
 
     if not user or not bcrypt.verify(password, user.password_hash):
-        return _err("账号或密码错误", 401)
+        n, locked, remain = record_failure("login_acc", identifier, **Limits.LOGIN_PER_ACCOUNT)
+        if locked:
+            return jsonify({
+                "status": "error", "code": "account_locked",
+                "message": f"密码错误次数过多，账号已锁定 {remain // 60 + 1} 分钟",
+            }), 429
+        left = Limits.LOGIN_PER_ACCOUNT["max_attempts"] - n
+        msg = "账号或密码错误"
+        if left <= 2:
+            msg += f"（还剩 {left} 次尝试机会）"
+        return _err(msg, 401)
     if user.status == "disabled":
         return _err("账号已被禁用，请联系管理员", 403)
 
+    # 登录成功 — 清空失败计数
+    clear_failures("login_acc", identifier)
     user.last_login_at = datetime.utcnow()
     db.session.commit()
 
@@ -104,13 +129,28 @@ def me():
 @auth_required
 def change_password():
     user = g.current_user
+    key = str(user.id)
+    locked, remain = check_lock("change_pwd", key)
+    if locked:
+        return jsonify({
+            "status": "error", "code": "rate_limited",
+            "message": f"操作过于频繁，请 {remain // 60 + 1} 分钟后再试",
+        }), 429
+
     data = request.get_json(silent=True) or {}
     old_pwd = data.get("old_password") or ""
     new_pwd = data.get("new_password") or ""
     if not bcrypt.verify(old_pwd, user.password_hash):
+        _, locked, remain = record_failure("change_pwd", key, **Limits.CHANGE_PWD)
+        if locked:
+            return jsonify({
+                "status": "error", "code": "rate_limited",
+                "message": f"原密码错误次数过多，请 {remain // 60 + 1} 分钟后再试",
+            }), 429
         return _err("原密码错误", 401)
     if len(new_pwd) < 6:
         return _err("新密码至少 6 位")
+    clear_failures("change_pwd", key)
     user.password_hash = bcrypt.hash(new_pwd)
     user.invalidate_tokens()  # 改密后所有端立刻失效
     db.session.commit()
@@ -136,9 +176,23 @@ def delete_account():
     需要密码二次确认，避免被误操作 / 抢账号。
     """
     user = g.current_user
+    key = str(user.id)
+    locked, remain = check_lock("delete_acc", key)
+    if locked:
+        return jsonify({
+            "status": "error", "code": "rate_limited",
+            "message": f"操作过于频繁，请 {remain // 60 + 1} 分钟后再试",
+        }), 429
+
     data = request.get_json(silent=True) or {}
     password = data.get("password") or ""
     if not bcrypt.verify(password, user.password_hash):
+        _, locked, remain = record_failure("delete_acc", key, **Limits.DELETE_ACCOUNT)
+        if locked:
+            return jsonify({
+                "status": "error", "code": "rate_limited",
+                "message": f"密码错误次数过多，请 {remain // 60 + 1} 分钟后再试",
+            }), 429
         return _err("密码错误", 401)
 
     # 1. 禁用 + token 失效

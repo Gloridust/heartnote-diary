@@ -28,8 +28,8 @@ class ApiService {
       handler.next(opts);
     },
     onResponse: (resp, handler) {
-      // 401 + auth_invalid → 通知 app 全局登出
       final data = resp.data;
+      // 401 + auth_invalid → 全局登出
       if (resp.statusCode == 401 && data is Map &&
           (data['code'] == 'auth_invalid' || data['code'] == 'forbidden')) {
         _onAuthInvalid?.call(data['message']?.toString() ?? '登录已过期');
@@ -244,7 +244,12 @@ class ApiService {
 
   void _check(dynamic data) {
     if (data is Map && data['status'] == 'error') {
-      throw ApiError(data['message'] as String? ?? '请求失败');
+      final code = data['code']?.toString();
+      final msg = data['message'] as String? ?? '请求失败';
+      if (code == 'rate_limited' || code == 'account_locked') {
+        throw RateLimited(msg);
+      }
+      throw ApiError(msg);
     }
   }
 }
@@ -252,6 +257,12 @@ class ApiService {
 class ApiError implements Exception {
   final String message;
   ApiError(this.message);
+  @override String toString() => message;
+}
+
+class RateLimited implements Exception {
+  final String message;
+  RateLimited(this.message);
   @override String toString() => message;
 }
 
