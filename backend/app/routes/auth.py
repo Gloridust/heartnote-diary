@@ -105,8 +105,8 @@ def login():
             }), 429
         left = Limits.LOGIN_PER_ACCOUNT["max_attempts"] - n
         msg = "账号或密码错误"
-        if left <= 2:
-            msg += f"（还剩 {left} 次尝试机会）"
+        if left <= 1:
+            msg += f"（还剩 {left} 次尝试）"
         return _err(msg, 401)
     if user.status == "disabled":
         return _err("账号已被禁用，请联系管理员", 403)

@@ -158,27 +158,30 @@ def clear_failures(scope: str, key: str):
 # ============ 配置中心 ============
 
 class Limits:
-    # 用户登录：单个账号 15 分钟 5 次失败 → 锁 15 分钟
-    LOGIN_PER_ACCOUNT = dict(max_attempts=5, window=15 * 60, lockout=15 * 60)
-    # 用户登录：单个 IP 15 分钟 30 次（攻击者用很多账号轮番试）
-    LOGIN_PER_IP = dict(max_attempts=30, window=15 * 60)
+    """限流策略 — 整体松紧度"5 次 / 分钟 + 锁 1 分钟"，
+    够防止误触/手抖和入门级脚本，又不会真正困住用户。"""
 
-    # 注册：单个 IP 1 小时 5 次（防机器人批量注册）
-    REGISTER_PER_IP = dict(max_attempts=5, window=60 * 60)
+    # 用户登录：单账号 1 分钟 5 次失败 → 锁 1 分钟
+    LOGIN_PER_ACCOUNT = dict(max_attempts=5, window=60, lockout=60)
+    # 用户登录：单 IP 1 分钟 20 次（攻击者用很多账号轮番试）
+    LOGIN_PER_IP = dict(max_attempts=20, window=60)
 
-    # 改密：单个用户 15 分钟 5 次 → 锁 15 分钟
-    CHANGE_PWD = dict(max_attempts=5, window=15 * 60, lockout=15 * 60)
+    # 注册：单 IP 10 分钟 10 次（防机器人批量注册，但允许真用户多次失败）
+    REGISTER_PER_IP = dict(max_attempts=10, window=10 * 60)
 
-    # 注销：单个用户 1 小时 3 次失败 → 锁 1 小时
-    DELETE_ACCOUNT = dict(max_attempts=3, window=60 * 60, lockout=60 * 60)
+    # 改密：单用户 1 分钟 5 次失败 → 锁 1 分钟
+    CHANGE_PWD = dict(max_attempts=5, window=60, lockout=60)
 
-    # 兑换码：单个用户 1 分钟 10 次（防穷举）
+    # 注销：单用户 1 分钟 5 次失败 → 锁 1 分钟
+    DELETE_ACCOUNT = dict(max_attempts=5, window=60, lockout=60)
+
+    # 兑换码：单用户 1 分钟 10 次（防穷举）
     REDEEM_PER_USER = dict(max_attempts=10, window=60)
-    # 兑换码：单个 IP 5 分钟 30 次
-    REDEEM_PER_IP = dict(max_attempts=30, window=5 * 60)
+    # 兑换码：单 IP 1 分钟 30 次
+    REDEEM_PER_IP = dict(max_attempts=30, window=60)
 
-    # 管理员登录：1 小时 5 次失败 → 锁 1 小时
-    ADMIN_LOGIN = dict(max_attempts=5, window=60 * 60, lockout=60 * 60)
+    # 管理员登录：单账号 / 单 IP 1 分钟 5 次失败 → 锁 1 分钟
+    ADMIN_LOGIN = dict(max_attempts=5, window=60, lockout=60)
 
-    # IAP verify：单个用户 1 分钟 30 次
+    # IAP verify：单用户 1 分钟 30 次（正常一笔订单 1 次，给重试足够空间）
     IAP_VERIFY = dict(max_attempts=30, window=60)
